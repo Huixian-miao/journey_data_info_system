@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.journey.dao.PersonJourneyInfoDao">
+
+    <resultMap id="BaseResultMap" type="org.journey.entity.PersonJourneyInfo">
+        <!--@Table person_journey_info-->
+        <result property="personId" column="person_id" jdbcType="INTEGER"/>
+        <result property="birthYear" column="birth_year" jdbcType="INTEGER"/>
+        <result property="gender" column="gender" jdbcType="INTEGER"/>
+        <result property="totalJourneyTime" column="total_journey_time" jdbcType="NUMERIC"/>
+        <result property="totalMileage" column="total_mileage" jdbcType="NUMERIC"/>
+    </resultMap>
+    <!--查询单个-->
+    <select id="queryById" resultMap="BaseResultMap">
+        select
+person_id, birth_year, gender, total_journey_time, total_mileage
+        from person_journey_info
+        where person_id = #{personId}
+    </select>
+
+    <!--查询指定行数据-->
+    <!--offset:（当前页码-1）*每页条数，pageSize每页记录数-->
+
+    <select id="queryAllByLimit" resultMap="BaseResultMap">
+        select
+        person_id, birth_year, gender, total_journey_time, total_mileage
+        from person_journey_info
+        <where>
+            <if test="birthYear1 != 0 and birthYear2 != 0">
+                and birth_year >= #{birthYear1} and birth_year &lt;= #{birthYear2}
+            </if>
+            <if test="mileAge1 != 0 and mileAge2 != 0">
+                and total_mileage >= #{mileAge1} and total_mileage &lt;= #{mileAge2}
+            </if>
+            <if test="journeyTime1 != 0 and journeyTime2 != 0">
+                and total_journey_time >= #{journeyTime1} and total_journey_time &lt;= #{journeyTime2}
+            </if>
+        </where>
+        limit #{offset}, #{pageSize}
+    </select>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="BaseResultMap">
+        select
+        person_id, birth_year, gender, total_journey_time, total_mileage
+        from person_journey_info
+    </select>
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from person_journey_info
+        <where>
+            <if test="personId != null">
+                and person_id = #{personId}
+            </if>
+            <if test="birthYear != null">
+                and birth_year = #{birthYear}
+            </if>
+            <if test="gender != null">
+                and gender = #{gender}
+            </if>
+            <if test="totalJourneyTime != null">
+                and total_journey_time = #{totalJourneyTime}
+            </if>
+            <if test="totalMileage != null">
+                and total_mileage = #{totalMileage}
+            </if>
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="personId" useGeneratedKeys="true">
+        insert into person_journey_info(birth_year, gender, total_journey_time, total_mileage)
+        values (#{birthYear}, #{gender}, #{totalJourneyTime}, #{totalMileage})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="personId" useGeneratedKeys="true">
+        insert into person_journey_info(birth_year, gender, total_journey_time, total_mileage)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+        (#{entity.birthYear}, #{entity.gender}, #{entity.totalJourneyTime}, #{entity.totalMileage})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="personId" useGeneratedKeys="true">
+        insert into person_journey_info(birth_year, gender, total_journey_time, total_mileage)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.birthYear}, #{entity.gender}, #{entity.totalJourneyTime}, #{entity.totalMileage})
+        </foreach>
+        on duplicate key update
+birth_year = values(birth_year),
+gender = values(gender),
+total_journey_time = values(total_journey_time),
+total_mileage = values(total_mileage)
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update person_journey_info
+        <set>
+            <if test="birthYear != null">
+                birth_year = #{birthYear},
+            </if>
+            <if test="gender != null">
+                gender = #{gender},
+            </if>
+            <if test="totalJourneyTime != null">
+                total_journey_time = #{totalJourneyTime},
+            </if>
+            <if test="totalMileage != null">
+                total_mileage = #{totalMileage},
+            </if>
+        </set>
+        where person_id = #{personId}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from person_journey_info where person_id = #{personId}
+    </delete>
+
+</mapper>
+
