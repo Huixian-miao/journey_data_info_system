@@ -88,5 +88,11 @@ public class PersonJourneyInfoServiceImpl extends ServiceImpl<PersonJourneyInfoD
                 mileAge1, mileAge2, journeyTime1, journeyTime2, offset, size,currentYear);
         return ResponseVO.success(personJourneyInfos);
     }
+
+    @Override
+    public ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(SelectLimitInfo selectLimitInfo) {
+        List<SelectLimitInfo> selectLimitInfos = selectLimitInfoDao.queryAllByLimit(selectLimitInfo);
+        return ResponseVO.success(selectLimitInfos);
+    }
 }
 

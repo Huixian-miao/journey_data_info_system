@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.journey.dao.dto.UserLimitQuery;
 import org.journey.dao.vo.ResponseVO;
 import org.journey.entity.PersonJourneyInfo;
+import org.journey.entity.SelectLimitInfo;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -20,6 +21,8 @@ import java.util.List;
 public interface PersonJourneyInfoService extends IService<PersonJourneyInfo> {
 
     ResponseVO<List<PersonJourneyInfo>> queryByLimit(@RequestBody @Valid UserLimitQuery userLimitQuery);
+
+    ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(SelectLimitInfo selectLimitInfo);
 
 
 }

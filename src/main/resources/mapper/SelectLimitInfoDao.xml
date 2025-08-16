@@ -60,7 +60,6 @@ min_value
                 and min_value = #{minValue}
             </if>
         </where>
-        limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 
     <!--通过实体作为筛选条件查询-->

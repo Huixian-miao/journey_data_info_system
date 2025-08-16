@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.journey.dao.dto.UserLimitQuery;
 import org.journey.dao.vo.ResponseVO;
 import org.journey.entity.PersonJourneyInfo;
+import org.journey.entity.SelectLimitInfo;
 import org.journey.service.PersonJourneyInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,10 +37,13 @@ public class PersonJourneyInfoController{
             page.setRecords(null);
             return ResponseVO.fail(responseVO1.getCode(), responseVO1.getMessage());
         }
-        List<PersonJourneyInfo> data = responseVO1.getData();
         page.setRecords(responseVO1.getData());
         return ResponseVO.success(page);// 无条件分页
     }
 
+    @PostMapping("/querySelectLimitInfo")
+    public ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(@RequestBody SelectLimitInfo selectLimitInfo) {
+        return personJourneyInfoService.querySelectLimitInfoByColumnKey(selectLimitInfo);
+    }
 }
 
