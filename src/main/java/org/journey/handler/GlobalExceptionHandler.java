@@ -1,6 +1,6 @@
 package org.journey.handler;
 
-import org.journey.reppository.vo.ResponseVO;
+import org.journey.dao.vo.ResponseVO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
