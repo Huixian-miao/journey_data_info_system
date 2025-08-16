@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -28,7 +29,7 @@ public class PersonJourneyInfoController{
     private PersonJourneyInfoService personJourneyInfoService;
     // Service
     @PostMapping("/queryByPage")
-    public ResponseVO<Page<PersonJourneyInfo>> queryByPage(@RequestBody UserLimitQuery userLimitQuery) {
+    public ResponseVO<Page<PersonJourneyInfo>> queryByPage(@RequestBody @Valid UserLimitQuery userLimitQuery) {
         ResponseVO<List<PersonJourneyInfo>> responseVO1 = personJourneyInfoService.queryByLimit(userLimitQuery);
         Page<PersonJourneyInfo> page = new Page<>(userLimitQuery.getPage(), userLimitQuery.getSize());
         if(responseVO1.getCode().equals(201)){

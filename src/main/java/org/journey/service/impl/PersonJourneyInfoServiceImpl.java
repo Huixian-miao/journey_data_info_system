@@ -2,9 +2,11 @@ package org.journey.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.journey.dao.PersonJourneyInfoDao;
+import org.journey.dao.SelectLimitInfoDao;
 import org.journey.dao.dto.UserLimitQuery;
 import org.journey.dao.vo.ResponseVO;
 import org.journey.entity.PersonJourneyInfo;
+import org.journey.entity.SelectLimitInfo;
 import org.journey.service.PersonJourneyInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,9 @@ public class PersonJourneyInfoServiceImpl extends ServiceImpl<PersonJourneyInfoD
 
     @Autowired
     private PersonJourneyInfoDao personJourneyInfoDao;
+
+    @Autowired
+    private SelectLimitInfoDao selectLimitInfoDao;
     //调用自定义Mapper方法（需XML或注解SQL）
     @Override
     public ResponseVO<List<PersonJourneyInfo>> queryByLimit(@Valid UserLimitQuery userLimitQuery){
@@ -43,8 +48,44 @@ public class PersonJourneyInfoServiceImpl extends ServiceImpl<PersonJourneyInfoD
         if(birthYear1 > birthYear2 || mileAge1 >mileAge2 || journeyTime1>journeyTime2){
             return ResponseVO.fail(201,"参数有误，请核实！");
         }
+        if(userLimitQuery.getAge2() !=0){
+            SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
+            selectLimitInfo.setColumnKey(1);
+            selectLimitInfo.setMinValue(userLimitQuery.getAge1());
+            selectLimitInfo.setMaxValue(userLimitQuery.getAge2());
+            long count = selectLimitInfoDao.count(selectLimitInfo);
+            //当前查询条件未保存，那么保存下
+            if(count==0){
+                selectLimitInfoDao.insert(selectLimitInfo);
+            }
+        }else{
+            birthYear1=0;
+            birthYear2=0;
+        }
+        if(mileAge2 !=0){
+            SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
+            selectLimitInfo.setColumnKey(2);
+            selectLimitInfo.setMinValue(userLimitQuery.getMileAge1());
+            selectLimitInfo.setMaxValue(userLimitQuery.getMileAge2());
+            long count = selectLimitInfoDao.count(selectLimitInfo);
+            //当前查询条件未保存，那么保存下
+            if(count==0){
+                selectLimitInfoDao.insert(selectLimitInfo);
+            }
+        }
+        if(journeyTime2 !=0){
+            SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
+            selectLimitInfo.setColumnKey(2);
+            selectLimitInfo.setMinValue(userLimitQuery.getJourneyTime1());
+            selectLimitInfo.setMaxValue(userLimitQuery.getJourneyTime2());
+            long count = selectLimitInfoDao.count(selectLimitInfo);
+            //当前查询条件未保存，那么保存下
+            if(count==0){
+                selectLimitInfoDao.insert(selectLimitInfo);
+            }
+        }
         List<PersonJourneyInfo> personJourneyInfos = personJourneyInfoDao.queryAllByLimit(birthYear1, birthYear2,
-                mileAge1, mileAge2, journeyTime1, journeyTime2, offset, size);
+                mileAge1, mileAge2, journeyTime1, journeyTime2, offset, size,currentYear);
         return ResponseVO.success(personJourneyInfos);
     }
 }

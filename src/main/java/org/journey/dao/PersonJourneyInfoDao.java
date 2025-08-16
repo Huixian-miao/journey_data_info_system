@@ -21,7 +21,9 @@ public interface PersonJourneyInfoDao extends BaseMapper<PersonJourneyInfo> {
                                             @Param("journeyTime1") int journeyTime1,
                                             @Param("journeyTime2") int journeyTime2,
                                           @Param("offset") int offset,
-                                          @Param("pageSize") int pageSize);
+                                          @Param("pageSize") int pageSize,
+                                          @Param("currentYear") int currentYear
+                                            );
 
 }
 

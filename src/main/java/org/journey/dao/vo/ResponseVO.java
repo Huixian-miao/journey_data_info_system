@@ -14,9 +14,10 @@ public class ResponseVO<T> implements Serializable {
     private Integer code;    // 状态码
     private String message; // 提示信息
     private T data;         // 响应数据
+    // 新增 public 构造方法
+    public ResponseVO() {}
 
-    // 私有构造器
-    private ResponseVO(Integer code, String message, T data) {
+    public ResponseVO(Integer code, String message, T data) {
         this.code = code;
         this.message = message;
         this.data = data;
