@@ -4,9 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.chart</groupId>
     <artifactId>homework</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>homework</name>
-    <description>homework</description>
+    <version>1.0.0</version>
+    <name>journey</name>
+    <description>journey</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -51,6 +51,15 @@
             <artifactId>hibernate-validator</artifactId>
             <version>6.2.5.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
@@ -65,6 +74,27 @@
     </dependencyManagement>
 
     <build>
+        <!-- 关键：配置资源打包规则 -->
+        <resources>
+            <!-- 处理 JSP 等前端资源 -->
+            <resource>
+                <!-- JSP 所在目录：src/main/webapp -->
+                <directory>src/main/webapp</directory>
+                <!-- 打包到 JAR 的 META-INF/resources 下 -->
+                <targetPath>META-INF/resources</targetPath>
+                <!-- 包含所有文件（**/* 表示递归包含子目录） -->
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+            <!-- 处理 application.yml 等资源（可选，已有默认配置可保留） -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -76,23 +106,19 @@
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.springframework.boot</groupId>-->
-<!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
-<!--                <version>${spring-boot.version}</version>-->
-<!--                <configuration>-->
-<!--                    <mainClass>com.chart.homework.HomeworkApplication</mainClass>-->
-<!--                    <skip>true</skip>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>repackage</id>-->
-<!--                        <goals>-->
-<!--                            <goal>repackage</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!-- 必须添加，否则插件不生效 -->
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
