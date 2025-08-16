@@ -4,7 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@MapperScan("org.journey.dao")
+@MapperScan("org.journey.reppository")
 @SpringBootApplication
 public class Main {
 

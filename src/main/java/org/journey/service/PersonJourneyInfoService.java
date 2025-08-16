@@ -1,8 +1,8 @@
 package org.journey.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.journey.dao.dto.UserLimitQuery;
-import org.journey.dao.vo.ResponseVO;
+import org.journey.reppository.dto.UserLimitQuery;
+import org.journey.reppository.vo.ResponseVO;
 import org.journey.entity.PersonJourneyInfo;
 import org.journey.entity.SelectLimitInfo;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package org.journey.dao;
+package org.journey.reppository;
 
 import org.apache.ibatis.annotations.Param;
 import org.journey.entity.SelectLimitInfo;

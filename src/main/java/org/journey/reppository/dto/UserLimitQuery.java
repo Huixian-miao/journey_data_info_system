@@ -1,4 +1,4 @@
-package org.journey.dao.dto;
+package org.journey.reppository.dto;
 
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;

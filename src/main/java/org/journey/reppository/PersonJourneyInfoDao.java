@@ -1,4 +1,4 @@
-package org.journey.dao;
+package org.journey.reppository;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;

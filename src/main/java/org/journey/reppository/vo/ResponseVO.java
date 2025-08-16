@@ -1,5 +1,5 @@
 
-package org.journey.dao.vo;
+package org.journey.reppository.vo;
 import lombok.Data;
 import java.io.Serializable;
 

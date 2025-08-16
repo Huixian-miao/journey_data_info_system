@@ -2,8 +2,8 @@ package org.journey.controller;
 
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.journey.dao.dto.UserLimitQuery;
-import org.journey.dao.vo.ResponseVO;
+import org.journey.reppository.dto.UserLimitQuery;
+import org.journey.reppository.vo.ResponseVO;
 import org.journey.entity.PersonJourneyInfo;
 import org.journey.entity.SelectLimitInfo;
 import org.journey.service.PersonJourneyInfoService;

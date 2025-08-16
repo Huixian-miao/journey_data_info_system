@@ -1,10 +1,10 @@
 package org.journey.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.journey.dao.PersonJourneyInfoDao;
-import org.journey.dao.SelectLimitInfoDao;
-import org.journey.dao.dto.UserLimitQuery;
-import org.journey.dao.vo.ResponseVO;
+import org.journey.reppository.PersonJourneyInfoDao;
+import org.journey.reppository.SelectLimitInfoDao;
+import org.journey.reppository.dto.UserLimitQuery;
+import org.journey.reppository.vo.ResponseVO;
 import org.journey.entity.PersonJourneyInfo;
 import org.journey.entity.SelectLimitInfo;
 import org.journey.service.PersonJourneyInfoService;
