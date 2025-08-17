@@ -87,9 +87,11 @@
             padding: 15px;
             border-radius: 5px;
             min-height: 500px;
+            width: 100%;
         }
         .chart-tabs {
             margin-bottom: 15px;
+            width: 100%;
         }
         .chart-tabs .layui-tab-title li {
             font-size: 14px;
@@ -97,9 +99,20 @@
         }
         .layui-tab-content {
             min-height: 450px;
+            width: 100%;
         }
         .layui-tab-item {
             height: 450px;
+            overflow: hidden;
+            width: 100%;
+        }
+        .layui-tab-item .chart-container {
+            height: 420px;
+            margin: 10px 0;
+            width: 100%;
+        }
+        .layui-tab {
+            width: 100%;
         }
         .history-section {
             margin-top: 15px;
@@ -156,7 +169,7 @@
         <!-- 查询类型选择器 -->
         <div class="query-type-selector">
             <button type="button" class="layui-btn layui-btn-primary active" data-type="age">
-                📊 按出生年份查询
+                📊 按年龄查询
             </button>
             <button type="button" class="layui-btn layui-btn-primary" data-type="mileage">
                 ✈️ 按飞行里程查询
@@ -168,7 +181,7 @@
         
         <!-- 动态查询表单 -->
         <div class="query-section">
-            <h3 id="queryTitle" style="color: #1E9FFF; margin-bottom: 10px; font-size: 16px;">📊 按出生年份查询</h3>
+            <h3 id="queryTitle" style="color: #1E9FFF; margin-bottom: 10px; font-size: 16px;">📊 按年龄查询</h3>
             <form class="layui-form" lay-filter="queryForm">
                 <div class="layui-form-item">
                     <label class="layui-form-label">查询区间</label>
@@ -204,13 +217,27 @@
                         <i class="layui-icon layui-icon-save"></i> 保存
                     </button>
                 </div>
+                <div style="margin-top: 5px; font-size: 11px; color: #52c41a; line-height: 1.3;">
+                    💾 保存当前查询条件，方便下次快速使用
+                </div>
             </div>
             
             <!-- 历史查询条件选择区域 -->
             <div class="history-section" id="historySection" style="display: none;">
-                <div style="margin-bottom: 8px; font-weight: bold; color: #1E9FFF;">📚 历史查询条件：</div>
+                <div style="margin-bottom: 8px; font-weight: bold; color: #1E9FFF;">
+                    📚 历史查询条件：
+                    <span style="font-size: 12px; font-weight: normal; color: #666; margin-left: 10px;">
+                        💡 点击任意历史条件可自动应用并执行查询
+                    </span>
+                </div>
                 <div id="historyContainer">
                     <!-- 历史查询条件将在这里动态生成 -->
+                </div>
+                <div style="margin-top: 8px; font-size: 11px; color: #999; line-height: 1.4;">
+                    <strong>使用说明：</strong><br>
+                    1. 点击历史条件名称可自动应用查询条件并执行查询<br>
+                    2. 点击 × 按钮可删除不需要的历史条件<br>
+                    3. 历史条件按最近使用时间排序，最新的显示在前面
                 </div>
             </div>
         </div>
@@ -349,7 +376,7 @@
             // 更新查询标题
             function updateQueryTitle() {
                 var titles = {
-                    'age': '📊 按出生年份查询',
+                    'age': '📊 按年龄查询',
                     'mileage': '✈️ 按飞行里程查询',
                     'time': '⏰ 按飞行时间查询'
                 };
@@ -474,13 +501,26 @@
             function getRanges() {
                 var ranges = [];
                 var inputs = document.querySelectorAll('#rangesContainer input[type="number"]');
+                console.log('找到输入框数量:', inputs.length);
+                
                 for (var i = 0; i < inputs.length; i += 2) {
                     var min = inputs[i].value;
                     var max = inputs[i + 1].value;
+                    console.log(`区间 ${i/2 + 1}: min=${min}, max=${max}`);
+                    
                     if (min !== '' && max !== '') {
-                        ranges.push({ min: parseInt(min), max: parseInt(max) });
+                        var minNum = parseInt(min);
+                        var maxNum = parseInt(max);
+                        
+                        if (minNum <= maxNum) {
+                            ranges.push({ min: minNum, max: maxNum });
+                        } else {
+                            console.warn(`区间 ${i/2 + 1} 的最小值大于最大值: ${minNum} > ${maxNum}`);
+                        }
                     }
                 }
+                
+                console.log('生成的区间数据:', ranges);
                 return ranges;
             }
 
@@ -566,6 +606,17 @@
                 });
             }
 
+            // 强制重绘所有图表
+            function forceResizeCharts() {
+                setTimeout(function() {
+                    Object.values(chartInstances).forEach(function(chart) {
+                        if (chart) {
+                            chart.resize();
+                        }
+                    });
+                }, 100);
+            }
+            
             // 更新图表
             function updateCharts(type, ranges, data) {
                 if (data.length === 0) return;
@@ -589,23 +640,52 @@
                             updateTimeCharts(ranges, data);
                             break;
                     }
+                    
+                    // 强制重绘图表
+                    forceResizeCharts();
                 }, 100);
             }
 
             // 更新年龄相关图表
             function updateAgeCharts(ranges, data) {
-                var categories = ranges.map(range => `${range.min}-${range.max}岁`);
-                var counts = ranges.map(range => {
+                console.log('更新年龄图表 - ranges:', ranges, 'data:', data);
+                
+                // 确保ranges数据正确
+                if (!ranges || ranges.length === 0) {
+                    console.error('年龄区间数据为空');
+                    return;
+                }
+                
+                // 验证ranges数据格式
+                var validRanges = ranges.filter(range => {
+                    return range && typeof range.min === 'number' && typeof range.max === 'number';
+                });
+                
+                if (validRanges.length === 0) {
+                    console.error('没有有效的年龄区间数据');
+                    return;
+                }
+                
+                var categories = validRanges.map(range => {
+                    return `${range.min}-${range.max}岁`;
+                });
+                
+                var counts = validRanges.map(range => {
                     var currentYear = new Date().getFullYear();
                     return data.filter(item => {
                         var age = currentYear - item.birthYear;
                         return age >= range.min && age <= range.max;
                     }).length;
                 });
+                
+                console.log('生成的categories:', categories, 'counts:', counts);
 
                 // 检查并初始化柱状图
                 var barContainer = document.getElementById('barChart');
-                if (!barContainer) return;
+                if (!barContainer) {
+                    console.error('柱状图容器不存在');
+                    return;
+                }
                 
                 // 柱状图
                 var barChart = echarts.init(barContainer);
@@ -620,19 +700,35 @@
                         axisPointer: { type: 'shadow' }
                     },
                     grid: {
-                        left: '10%',
-                        right: '10%',
-                        bottom: '15%',
-                        top: '15%'
+                        left: '15%',
+                        right: '15%',
+                        bottom: '30%',
+                        top: '20%'
                     },
                     xAxis: { 
                         type: 'category', 
                         data: categories,
-                        axisLabel: { rotate: 45 }
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 12,
+                            interval: 0,
+                            show: true,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true
+                        },
+                        axisLine: {
+                            show: true
+                        }
                     },
                     yAxis: { 
                         type: 'value', 
-                        name: '记录数量' 
+                        name: '记录数量',
+                        axisLabel: {
+                            color: '#333'
+                        }
                     },
                     series: [{
                         name: '记录数量',
@@ -647,7 +743,10 @@
 
                 // 检查并初始化饼状图
                 var pieContainer = document.getElementById('pieChart');
-                if (!pieContainer) return;
+                if (!pieContainer) {
+                    console.error('饼状图容器不存在');
+                    return;
+                }
                 
                 // 饼状图
                 var pieChart = echarts.init(pieContainer);
@@ -664,12 +763,13 @@
                     legend: {
                         orient: 'vertical',
                         left: 'left',
-                        top: 'middle'
+                        top: 'middle',
+                        fontSize: 12
                     },
                     series: [{
                         name: '记录数量',
                         type: 'pie',
-                        radius: ['40%', '70%'],
+                        radius: ['20%', '50%'],
                         center: ['60%', '50%'],
                         data: categories.map((cat, index) => ({
                             name: cat,
@@ -681,6 +781,15 @@
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             }
+                        },
+                        label: {
+                            fontSize: 11,
+                            formatter: '{b}\n{c}',
+                            show: true,
+                            color: '#333'
+                        },
+                        labelLine: {
+                            show: true
                         }
                     }]
                 };
@@ -689,7 +798,10 @@
 
                 // 检查并初始化折线图
                 var lineContainer = document.getElementById('lineChart');
-                if (!lineContainer) return;
+                if (!lineContainer) {
+                    console.error('折线图容器不存在');
+                    return;
+                }
                 
                 // 折线图
                 var lineChart = echarts.init(lineContainer);
@@ -703,18 +815,35 @@
                         trigger: 'axis' 
                     },
                     grid: {
-                        left: '10%',
-                        right: '10%',
-                        bottom: '15%',
-                        top: '15%'
+                        left: '15%',
+                        right: '15%',
+                        bottom: '30%',
+                        top: '20%'
                     },
                     xAxis: { 
                         type: 'category', 
-                        data: categories 
+                        data: categories,
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 12,
+                            interval: 0,
+                            show: true,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true
+                        },
+                        axisLine: {
+                            show: true
+                        }
                     },
                     yAxis: { 
                         type: 'value', 
-                        name: '记录数量' 
+                        name: '记录数量',
+                        axisLabel: {
+                            color: '#333'
+                        }
                     },
                     series: [{
                         name: '记录数量',
@@ -732,16 +861,42 @@
 
             // 更新里程相关图表
             function updateMileageCharts(ranges, data) {
-                var categories = ranges.map(range => `${range.min}-${range.max}公里`);
-                var counts = ranges.map(range => {
+                console.log('更新里程图表 - ranges:', ranges, 'data:', data);
+                
+                // 确保ranges数据正确
+                if (!ranges || ranges.length === 0) {
+                    console.error('里程区间数据为空');
+                    return;
+                }
+                
+                // 验证ranges数据格式
+                var validRanges = ranges.filter(range => {
+                    return range && typeof range.min === 'number' && typeof range.max === 'number';
+                });
+                
+                if (validRanges.length === 0) {
+                    console.error('没有有效的里程区间数据');
+                    return;
+                }
+                
+                var categories = validRanges.map(range => {
+                    return `${range.min}-${range.max}公里`;
+                });
+                
+                var counts = validRanges.map(range => {
                     return data.filter(item => 
                         item.totalMileage >= range.min && item.totalMileage <= range.max
                     ).length;
                 });
+                
+                console.log('生成的categories:', categories, 'counts:', counts);
 
                 // 检查并初始化柱状图
                 var barContainer = document.getElementById('barChart');
-                if (!barContainer) return;
+                if (!barContainer) {
+                    console.error('柱状图容器不存在');
+                    return;
+                }
                 
                 // 柱状图
                 var barChart = echarts.init(barContainer);
@@ -756,19 +911,35 @@
                         axisPointer: { type: 'shadow' }
                     },
                     grid: {
-                        left: '10%',
-                        right: '10%',
-                        bottom: '15%',
-                        top: '15%'
+                        left: '15%',
+                        right: '15%',
+                        bottom: '30%',
+                        top: '20%'
                     },
                     xAxis: { 
                         type: 'category', 
                         data: categories,
-                        axisLabel: { rotate: 45 }
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 12,
+                            interval: 0,
+                            show: true,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true
+                        },
+                        axisLine: {
+                            show: true
+                        }
                     },
                     yAxis: { 
                         type: 'value', 
-                        name: '记录数量' 
+                        name: '记录数量',
+                        axisLabel: {
+                            color: '#333'
+                        }
                     },
                     series: [{
                         name: '记录数量',
@@ -783,7 +954,10 @@
 
                 // 检查并初始化饼状图
                 var pieContainer = document.getElementById('pieChart');
-                if (!pieContainer) return;
+                if (!pieContainer) {
+                    console.error('饼状图容器不存在');
+                    return;
+                }
                 
                 // 饼状图
                 var pieChart = echarts.init(pieContainer);
@@ -800,12 +974,13 @@
                     legend: {
                         orient: 'vertical',
                         left: 'left',
-                        top: 'middle'
+                        top: 'middle',
+                        fontSize: 12
                     },
                     series: [{
                         name: '记录数量',
                         type: 'pie',
-                        radius: ['40%', '70%'],
+                        radius: ['20%', '50%'],
                         center: ['60%', '50%'],
                         data: categories.map((cat, index) => ({
                             name: cat,
@@ -817,6 +992,15 @@
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             }
+                        },
+                        label: {
+                            fontSize: 11,
+                            formatter: '{b}\n{c}',
+                            show: true,
+                            color: '#333'
+                        },
+                        labelLine: {
+                            show: true
                         }
                     }]
                 };
@@ -825,7 +1009,10 @@
 
                 // 检查并初始化折线图
                 var lineContainer = document.getElementById('lineChart');
-                if (!lineContainer) return;
+                if (!lineContainer) {
+                    console.error('折线图容器不存在');
+                    return;
+                }
                 
                 // 折线图
                 var lineChart = echarts.init(lineContainer);
@@ -839,18 +1026,35 @@
                         trigger: 'axis' 
                     },
                     grid: {
-                        left: '10%',
-                        right: '10%',
-                        bottom: '15%',
-                        top: '15%'
+                        left: '15%',
+                        right: '15%',
+                        bottom: '30%',
+                        top: '20%'
                     },
                     xAxis: { 
                         type: 'category', 
-                        data: categories 
+                        data: categories,
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 12,
+                            interval: 0,
+                            show: true,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true
+                        },
+                        axisLine: {
+                            show: true
+                        }
                     },
                     yAxis: { 
                         type: 'value', 
-                        name: '记录数量' 
+                        name: '记录数量',
+                        axisLabel: {
+                            color: '#333'
+                        }
                     },
                     series: [{
                         name: '记录数量',
@@ -868,16 +1072,42 @@
 
             // 更新时间相关图表
             function updateTimeCharts(ranges, data) {
-                var categories = ranges.map(range => `${range.min}-${range.max}小时`);
-                var counts = ranges.map(range => {
+                console.log('更新时间图表 - ranges:', ranges, 'data:', data);
+                
+                // 确保ranges数据正确
+                if (!ranges || ranges.length === 0) {
+                    console.error('时间区间数据为空');
+                    return;
+                }
+                
+                // 验证ranges数据格式
+                var validRanges = ranges.filter(range => {
+                    return range && typeof range.min === 'number' && typeof range.max === 'number';
+                });
+                
+                if (validRanges.length === 0) {
+                    console.error('没有有效的时间区间数据');
+                    return;
+                }
+                
+                var categories = validRanges.map(range => {
+                    return `${range.min}-${range.max}小时`;
+                });
+                
+                var counts = validRanges.map(range => {
                     return data.filter(item => 
                         item.totalJourneyTime >= range.min && item.totalJourneyTime <= range.max
                     ).length;
                 });
+                
+                console.log('生成的categories:', categories, 'counts:', counts);
 
                 // 检查并初始化柱状图
                 var barContainer = document.getElementById('barChart');
-                if (!barContainer) return;
+                if (!barContainer) {
+                    console.error('柱状图容器不存在');
+                    return;
+                }
                 
                 // 柱状图
                 var barChart = echarts.init(barContainer);
@@ -892,19 +1122,35 @@
                         axisPointer: { type: 'shadow' }
                     },
                     grid: {
-                        left: '10%',
-                        right: '10%',
-                        bottom: '15%',
-                        top: '15%'
+                        left: '15%',
+                        right: '15%',
+                        bottom: '30%',
+                        top: '20%'
                     },
                     xAxis: { 
                         type: 'category', 
                         data: categories,
-                        axisLabel: { rotate: 45 }
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 12,
+                            interval: 0,
+                            show: true,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true
+                        },
+                        axisLine: {
+                            show: true
+                        }
                     },
                     yAxis: { 
                         type: 'value', 
-                        name: '记录数量' 
+                        name: '记录数量',
+                        axisLabel: {
+                            color: '#333'
+                        }
                     },
                     series: [{
                         name: '记录数量',
@@ -919,7 +1165,10 @@
 
                 // 检查并初始化饼状图
                 var pieContainer = document.getElementById('pieChart');
-                if (!pieContainer) return;
+                if (!pieContainer) {
+                    console.error('饼状图容器不存在');
+                    return;
+                }
                 
                 // 饼状图
                 var pieChart = echarts.init(pieContainer);
@@ -936,12 +1185,13 @@
                     legend: {
                         orient: 'vertical',
                         left: 'left',
-                        top: 'middle'
+                        top: 'middle',
+                        fontSize: 12
                     },
                     series: [{
                         name: '记录数量',
                         type: 'pie',
-                        radius: ['40%', '70%'],
+                        radius: ['20%', '50%'],
                         center: ['60%', '50%'],
                         data: categories.map((cat, index) => ({
                             name: cat,
@@ -953,6 +1203,15 @@
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             }
+                        },
+                        label: {
+                            fontSize: 11,
+                            formatter: '{b}\n{c}',
+                            show: true,
+                            color: '#333'
+                        },
+                        labelLine: {
+                            show: true
                         }
                     }]
                 };
@@ -961,7 +1220,10 @@
 
                 // 检查并初始化折线图
                 var lineContainer = document.getElementById('lineChart');
-                if (!lineContainer) return;
+                if (!lineContainer) {
+                    console.error('折线图容器不存在');
+                    return;
+                }
                 
                 // 折线图
                 var lineChart = echarts.init(lineContainer);
@@ -975,18 +1237,35 @@
                         trigger: 'axis' 
                     },
                     grid: {
-                        left: '10%',
-                        right: '10%',
-                        bottom: '15%',
-                        top: '15%'
+                        left: '15%',
+                        right: '15%',
+                        bottom: '30%',
+                        top: '20%'
                     },
                     xAxis: { 
                         type: 'category', 
-                        data: categories 
+                        data: categories,
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 12,
+                            interval: 0,
+                            show: true,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true
+                        },
+                        axisLine: {
+                            show: true
+                        }
                     },
                     yAxis: { 
                         type: 'value', 
-                        name: '记录数量' 
+                        name: '记录数量',
+                        axisLabel: {
+                            color: '#333'
+                        }
                     },
                     series: [{
                         name: '记录数量',
@@ -1047,8 +1326,11 @@
                     `;
                     div.title = '点击应用此查询条件并自动执行查询';
                     
-                    div.addEventListener('click', function() {
-                        applyHistoryQuery(key, query);
+                    // 绑定点击事件
+                    div.addEventListener('click', function(e) {
+                        if (e.target.tagName !== 'SPAN') { // 避免删除按钮触发
+                            applyHistoryQuery(key, query);
+                        }
                     });
                     
                     // 添加删除按钮
@@ -1064,33 +1346,59 @@
                     
                     historyContainer.appendChild(div);
                 });
+                
+                console.log('历史查询条件已更新，共', sortedKeys.length, '个');
             }
             
             // 应用历史查询条件
             function applyHistoryQuery(key, query) {
-                // 切换到对应的查询类型
-                document.querySelectorAll('.query-type-selector .layui-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector(`[data-type="${query.type}"]`).classList.add('active');
+                console.log('应用历史查询条件:', key, query);
                 
-                currentQueryType = query.type;
-                updateQueryTitle();
-                clearRanges();
-                
-                // 应用保存的查询条件
-                query.ranges.forEach(function(range) {
-                    addRangeInput(range.min, range.max);
-                });
-                
-                // 高亮当前选中的历史条件
-                document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
-                document.querySelector(`[data-key="${key}"]`).classList.add('active');
-                
-                hideResults();
-                
-                // 自动执行查询
-                setTimeout(function() {
-                    queryData(currentQueryType, query.ranges);
-                }, 100);
+                try {
+                    // 切换到对应的查询类型
+                    document.querySelectorAll('.query-type-selector .layui-btn').forEach(b => b.classList.remove('active'));
+                    var targetBtn = document.querySelector(`[data-type="${query.type}"]`);
+                    if (targetBtn) {
+                        targetBtn.classList.add('active');
+                    } else {
+                        console.error('未找到对应的查询类型按钮:', query.type);
+                        return;
+                    }
+                    
+                    currentQueryType = query.type;
+                    updateQueryTitle();
+                    clearRanges();
+                    
+                    // 应用保存的查询条件
+                    if (query.ranges && query.ranges.length > 0) {
+                        query.ranges.forEach(function(range) {
+                            addRangeInput(range.min, range.max);
+                        });
+                        console.log('已应用查询区间:', query.ranges);
+                    } else {
+                        console.error('查询区间数据为空');
+                        return;
+                    }
+                    
+                    // 高亮当前选中的历史条件
+                    document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
+                    var targetItem = document.querySelector(`[data-key="${key}"]`);
+                    if (targetItem) {
+                        targetItem.classList.add('active');
+                    }
+                    
+                    hideResults();
+                    
+                    // 自动执行查询
+                    setTimeout(function() {
+                        console.log('开始执行历史查询...');
+                        queryData(currentQueryType, query.ranges);
+                    }, 200);
+                    
+                } catch (error) {
+                    console.error('应用历史查询条件时出错:', error);
+                    layer.msg('应用历史查询条件失败，请重试');
+                }
             }
             
             // 删除历史查询条件
@@ -1118,8 +1426,31 @@
                     if (chartInstances[activeTabId]) {
                         chartInstances[activeTabId].resize();
                     }
+                    // 强制重绘所有图表
+                    forceResizeCharts();
                 }, 100);
             });
+            
+            // 显示使用提示
+            setTimeout(function() {
+                layer.msg('💡 提示：设置查询条件后点击"查询数据"按钮即可查看结果', {
+                    icon: 1,
+                    time: 5000,
+                    offset: 't'
+                });
+            }, 1000);
+            
+            // 测试历史查询条件功能
+            setTimeout(function() {
+                if (Object.keys(savedQueries).length > 0) {
+                    console.log('发现保存的查询条件:', savedQueries);
+                    layer.msg('📚 发现保存的查询条件，点击可快速应用', {
+                        icon: 1,
+                        time: 3000,
+                        offset: 't'
+                    });
+                }
+            }, 2000);
         });
     });
 </script>
