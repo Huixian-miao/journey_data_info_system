@@ -1623,6 +1623,14 @@
                 console.log('应用历史查询条件:', key, query);
                 
                 try {
+                    // 确保DOM元素已加载
+                    var queryTypeSelector = document.querySelector('.query-type-selector');
+                    if (!queryTypeSelector) {
+                        console.error('查询类型选择器未找到');
+                        layer.msg('页面元素未加载完成，请稍后重试');
+                        return;
+                    }
+                    
                     // 切换到对应的查询类型
                     document.querySelectorAll('.query-type-selector .layui-btn').forEach(b => b.classList.remove('active'));
                     
@@ -1639,20 +1647,36 @@
                         console.log('可用的按钮数量:', allButtons.length);
                         allButtons.forEach(function(btn, index) {
                             console.log(`按钮 ${index}:`, {
-                                text: btn.textContent,
+                                text: btn.textContent.trim(),
                                 dataType: btn.getAttribute('data-type'),
-                                className: btn.className
+                                className: btn.className,
+                                tagName: btn.tagName
                             });
                         });
                         
                         // 尝试其他选择器
-                        var alternativeBtn = document.querySelector(`[data-type="${query.type}"]`);
+                        var alternativeBtn = document.querySelector(`.query-type-selector [data-type="${query.type}"]`);
                         if (alternativeBtn) {
                             console.log('使用替代选择器找到按钮:', alternativeBtn);
                             alternativeBtn.classList.add('active');
                         } else {
-                            layer.msg('查询类型不支持，请检查配置');
-                            return;
+                            // 最后尝试：直接通过文本内容查找
+                            var textMatchBtn = Array.from(document.querySelectorAll('.query-type-selector .layui-btn')).find(btn => {
+                                var text = btn.textContent.trim();
+                                if (query.type === 'age' && text.includes('年龄')) return true;
+                                if (query.type === 'mileage' && text.includes('里程')) return true;
+                                if (query.type === 'time' && text.includes('时间')) return true;
+                                return false;
+                            });
+                            
+                            if (textMatchBtn) {
+                                console.log('通过文本内容找到按钮:', textMatchBtn);
+                                textMatchBtn.classList.add('active');
+                            } else {
+                                console.error('无法找到任何匹配的按钮');
+                                layer.msg('查询类型不支持，请检查配置');
+                                return;
+                            }
                         }
                     }
                     
@@ -1884,32 +1908,62 @@
 
             // 从数据库加载保存的查询条件
             function loadSavedQueryConditions() {
+                console.log('开始加载保存的查询条件...');
                 layui.$.ajax({
                     url: '/personJourneyInfo/getQueryConditions',
                     type: 'get',
                     data: { userId: 'default_user' },
                     dataType: 'json',
                     success: function (res) {
+                        console.log('加载查询条件响应:', res);
                         if (res.code === 200) {
                             // 转换数据格式，兼容前端显示
                             savedQueries = {};
-                            res.data.forEach(function(item) {
-                                var key = item.id.toString();
-                                savedQueries[key] = {
-                                    id: item.id,
-                                    name: item.queryName,
-                                    type: item.queryType,
-                                    ranges: JSON.parse(item.queryRanges),
-                                    timestamp: new Date(item.createdTime).getTime()
-                                };
-                            });
-                            updateHistoryDisplay();
+                            if (res.data && Array.isArray(res.data)) {
+                                res.data.forEach(function(item, index) {
+                                    console.log(`处理查询条件 ${index}:`, item);
+                                    try {
+                                        var key = item.id.toString();
+                                        var ranges = [];
+                                        
+                                        // 安全地解析JSON
+                                        if (item.queryRanges) {
+                                            try {
+                                                ranges = JSON.parse(item.queryRanges);
+                                                console.log(`解析的区间数据:`, ranges);
+                                            } catch (parseError) {
+                                                console.error(`解析区间数据失败:`, parseError);
+                                                ranges = [];
+                                            }
+                                        }
+                                        
+                                        savedQueries[key] = {
+                                            id: item.id,
+                                            name: item.queryName || '未命名查询',
+                                            type: item.queryType || 'age',
+                                            ranges: ranges,
+                                            timestamp: item.createdTime ? new Date(item.createdTime).getTime() : Date.now()
+                                        };
+                                        
+                                        console.log(`成功添加查询条件 ${key}:`, savedQueries[key]);
+                                    } catch (itemError) {
+                                        console.error(`处理查询条件项失败:`, itemError, item);
+                                    }
+                                });
+                                
+                                console.log('最终保存的查询条件:', savedQueries);
+                                updateHistoryDisplay();
+                            } else {
+                                console.warn('响应数据不是数组:', res.data);
+                            }
                         } else {
                             console.error('加载查询条件失败:', res.message);
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error('加载查询条件失败:', error);
+                        console.error('XHR状态:', xhr.status);
+                        console.error('错误详情:', xhr.responseText);
                     }
                 });
             }
