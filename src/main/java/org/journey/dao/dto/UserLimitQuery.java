@@ -27,7 +27,7 @@ public class UserLimitQuery {
     @NotNull(message = "页码不能为空")
     private Integer page = 1; // 默认值
 
-    @Range(min = 1, max = 20, message = "每页条数需在1-100之间")
+    @Range(min = 1, max = 20, message = "每页条数需在1-20之间")
     @NotNull(message = "每页条数不能为空")
     private Integer size = 10; // 默认值
 }

@@ -13,27 +13,29 @@
     <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
     <style>
         body { 
-            padding: 20px; 
+            padding: 15px; 
             font-family: "Microsoft YaHei", Arial, sans-serif; 
             background-color: #f5f5f5;
         }
         .layui-card { 
-            margin-bottom: 20px; 
+            margin-bottom: 15px; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .layui-card-header { 
             background-color: #1E9FFF; 
             color: white; 
             font-weight: bold;
+            padding: 10px 15px;
         }
         .chart-container { 
             width: 100%; 
-            height: 500px; 
-            margin: 20px 0;
+            height: 400px; 
+            margin: 15px 0;
+            position: relative;
         }
         .query-section {
-            margin-bottom: 30px;
-            padding: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
             background-color: white;
             border-radius: 5px;
             border-left: 4px solid #1E9FFF;
@@ -41,8 +43,8 @@
         .range-item {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
-            padding: 15px;
+            margin-bottom: 10px;
+            padding: 10px;
             background-color: #f8f9fa;
             border-radius: 5px;
             border: 1px solid #e9ecef;
@@ -50,47 +52,97 @@
         .range-inputs {
             display: flex;
             align-items: center;
-            margin-right: 15px;
+            margin-right: 10px;
             flex: 1;
         }
         .range-inputs input {
-            width: 100px;
-            margin: 0 8px;
+            width: 80px;
+            margin: 0 5px;
         }
         .range-label {
             font-weight: bold;
             color: #1E9FFF;
-            margin-right: 10px;
-            min-width: 80px;
+            margin-right: 8px;
+            min-width: 70px;
         }
         .query-type-selector {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
         }
         .query-type-selector .layui-btn {
-            margin: 0 10px;
-            padding: 8px 20px;
-            font-size: 14px;
+            margin: 0 8px;
+            padding: 6px 15px;
+            font-size: 13px;
         }
         .query-type-selector .layui-btn-primary.active {
             background-color: #1E9FFF;
             color: white;
         }
         .result-section {
-            margin-top: 30px;
+            margin-top: 20px;
         }
         .chart-section {
-            margin-top: 30px;
+            margin-top: 20px;
             background-color: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 5px;
+            min-height: 500px;
         }
         .chart-tabs {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .chart-tabs .layui-tab-title li {
-            font-size: 16px;
-            padding: 10px 20px;
+            font-size: 14px;
+            padding: 8px 15px;
+        }
+        .layui-tab-content {
+            min-height: 450px;
+        }
+        .layui-tab-item {
+            height: 450px;
+        }
+        .history-section {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f9ff;
+            border-radius: 5px;
+            border: 1px solid #b3d8ff;
+        }
+        .history-item {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            background-color: #e6f3ff;
+            border: 1px solid #91d5ff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        .history-item:hover {
+            background-color: #b3d8ff;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .history-item.active {
+            background-color: #1E9FFF;
+            color: white;
+            border-color: #1E9FFF;
+        }
+        .history-item .query-info {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .history-item.active .query-info {
+            color: #e6f3ff;
+        }
+        .save-query-section {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #f6ffed;
+            border-radius: 3px;
+            border: 1px solid #b7eb8f;
         }
     </style>
 </head>
@@ -116,7 +168,7 @@
         
         <!-- 动态查询表单 -->
         <div class="query-section">
-            <h3 id="queryTitle" style="color: #1E9FFF; margin-bottom: 15px;">📊 按出生年份查询</h3>
+            <h3 id="queryTitle" style="color: #1E9FFF; margin-bottom: 10px; font-size: 16px;">📊 按出生年份查询</h3>
             <form class="layui-form" lay-filter="queryForm">
                 <div class="layui-form-item">
                     <label class="layui-form-label">查询区间</label>
@@ -140,6 +192,27 @@
                     </div>
                 </div>
             </form>
+            
+            <!-- 历史查询条件保存区域 -->
+            <div class="save-query-section">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">保存查询</label>
+                    <div class="layui-input-inline" style="width: 200px;">
+                        <input type="text" id="queryName" placeholder="输入查询条件名称" class="layui-input">
+                    </div>
+                    <button type="button" class="layui-btn layui-btn-sm" id="saveQueryBtn">
+                        <i class="layui-icon layui-icon-save"></i> 保存
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 历史查询条件选择区域 -->
+            <div class="history-section" id="historySection" style="display: none;">
+                <div style="margin-bottom: 8px; font-weight: bold; color: #1E9FFF;">📚 历史查询条件：</div>
+                <div id="historyContainer">
+                    <!-- 历史查询条件将在这里动态生成 -->
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -217,6 +290,23 @@
             var currentQueryData = [];
             var currentQueryRanges = [];
             var rangeIndex = 0;
+            var savedQueries = JSON.parse(localStorage.getItem('savedQueries') || '{}');
+            
+            // 图表实例存储
+            var chartInstances = {
+                barChart: null,
+                pieChart: null,
+                lineChart: null
+            };
+            
+            // 窗口大小变化时重绘图表
+            window.addEventListener('resize', function() {
+                Object.values(chartInstances).forEach(function(chart) {
+                    if (chart) {
+                        chart.resize();
+                    }
+                });
+            });
 
             // 初始化表格
             var tableIns = table.render({
@@ -235,7 +325,7 @@
                 ]]
                 , page: true
                 , limit: 20
-                , limits: [10, 20, 30, 40, 50]
+                , limits: [10, 15, 20]
                 , height: 400
                 , text: {
                     none: '暂无数据，请先设置查询条件进行查询'
@@ -266,12 +356,12 @@
                 document.getElementById('queryTitle').textContent = titles[currentQueryType];
             }
 
-            // 初始化区间
+            // 初始化区间 - 默认设置为两个区间
             function initRanges() {
                 var ranges = {
-                    'age': [{min: 0, max: 18}, {min: 19, max: 30}, {min: 31, max: 50}, {min: 51, max: 100}],
-                    'mileage': [{min: 0, max: 100}, {min: 100, max: 500}, {min: 500, max: 1000}, {min: 1000, max: 5000}],
-                    'time': [{min: 0, max: 10}, {min: 10, max: 20}, {min: 20, max: 50}, {min: 50, max: 100}]
+                    'age': [{min: 0, max: 30}, {min: 31, max: 100}],
+                    'mileage': [{min: 0, max: 500}, {min: 501, max: 5000}],
+                    'time': [{min: 0, max: 20}, {min: 21, max: 100}]
                 };
                 
                 ranges[currentQueryType].forEach(function(range) {
@@ -302,9 +392,9 @@
                     <div class="range-label">${labels[currentQueryType]}</div>
                     <div class="range-inputs">
                         <input type="number" placeholder="最小值" autocomplete="off" class="layui-input" value="${min}">
-                        <span style="padding: 0 8px; color: #666;">-</span>
+                        <span style="padding: 0 5px; color: #666;">-</span>
                         <input type="number" placeholder="最大值" autocomplete="off" class="layui-input" value="${max}">
-                        <span style="margin-left: 8px; color: #999;">${units[currentQueryType]}</span>
+                        <span style="margin-left: 5px; color: #999;">${units[currentQueryType]}</span>
                     </div>
                     <button type="button" class="layui-btn layui-btn-danger layui-btn-sm removeRangeBtn">删除</button>
                 `;
@@ -327,6 +417,34 @@
                 clearRanges();
                 initRanges();
                 hideResults();
+            });
+
+            // 保存查询条件
+            document.getElementById('saveQueryBtn').addEventListener('click', function() {
+                var queryName = document.getElementById('queryName').value.trim();
+                if (!queryName) {
+                    layer.msg('请输入查询条件名称');
+                    return;
+                }
+                
+                var ranges = getRanges();
+                if (ranges.length === 0) {
+                    layer.msg('请先设置查询条件');
+                    return;
+                }
+                
+                var queryKey = currentQueryType + '_' + Date.now();
+                savedQueries[queryKey] = {
+                    name: queryName,
+                    type: currentQueryType,
+                    ranges: ranges,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
+                document.getElementById('queryName').value = '';
+                updateHistoryDisplay();
+                layer.msg('查询条件保存成功');
             });
 
             document.addEventListener('click', function(e) {
@@ -451,18 +569,27 @@
             // 更新图表
             function updateCharts(type, ranges, data) {
                 if (data.length === 0) return;
-
-                switch(type) {
-                    case 'age':
-                        updateAgeCharts(ranges, data);
-                        break;
-                    case 'mileage':
-                        updateMileageCharts(ranges, data);
-                        break;
-                    case 'time':
-                        updateTimeCharts(ranges, data);
-                        break;
+                
+                // 确保图表容器存在且可见
+                var chartSection = document.getElementById('chartSection');
+                if (chartSection.style.display === 'none') {
+                    chartSection.style.display = 'block';
                 }
+                
+                // 延迟初始化图表，确保DOM完全渲染
+                setTimeout(function() {
+                    switch(type) {
+                        case 'age':
+                            updateAgeCharts(ranges, data);
+                            break;
+                        case 'mileage':
+                            updateMileageCharts(ranges, data);
+                            break;
+                        case 'time':
+                            updateTimeCharts(ranges, data);
+                            break;
+                    }
+                }, 100);
             }
 
             // 更新年龄相关图表
@@ -476,13 +603,17 @@
                     }).length;
                 });
 
+                // 检查并初始化柱状图
+                var barContainer = document.getElementById('barChart');
+                if (!barContainer) return;
+                
                 // 柱状图
-                var barChart = echarts.init(document.getElementById('barChart'));
+                var barChart = echarts.init(barContainer);
                 var barOption = {
                     title: { 
                         text: '年龄区间统计 - 柱状图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'axis',
@@ -491,7 +622,8 @@
                     grid: {
                         left: '10%',
                         right: '10%',
-                        bottom: '15%'
+                        bottom: '15%',
+                        top: '15%'
                     },
                     xAxis: { 
                         type: 'category', 
@@ -511,14 +643,19 @@
                     }]
                 };
                 barChart.setOption(barOption);
+                chartInstances.barChart = barChart;
 
+                // 检查并初始化饼状图
+                var pieContainer = document.getElementById('pieChart');
+                if (!pieContainer) return;
+                
                 // 饼状图
-                var pieChart = echarts.init(document.getElementById('pieChart'));
+                var pieChart = echarts.init(pieContainer);
                 var pieOption = {
                     title: { 
                         text: '年龄区间统计 - 饼状图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'item',
@@ -548,14 +685,19 @@
                     }]
                 };
                 pieChart.setOption(pieOption);
+                chartInstances.pieChart = pieChart;
 
+                // 检查并初始化折线图
+                var lineContainer = document.getElementById('lineChart');
+                if (!lineContainer) return;
+                
                 // 折线图
-                var lineChart = echarts.init(document.getElementById('lineChart'));
+                var lineChart = echarts.init(lineContainer);
                 var lineOption = {
                     title: { 
                         text: '年龄区间统计 - 折线图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'axis' 
@@ -563,7 +705,8 @@
                     grid: {
                         left: '10%',
                         right: '10%',
-                        bottom: '15%'
+                        bottom: '15%',
+                        top: '15%'
                     },
                     xAxis: { 
                         type: 'category', 
@@ -584,6 +727,7 @@
                     }]
                 };
                 lineChart.setOption(lineOption);
+                chartInstances.lineChart = lineChart;
             }
 
             // 更新里程相关图表
@@ -595,13 +739,17 @@
                     ).length;
                 });
 
+                // 检查并初始化柱状图
+                var barContainer = document.getElementById('barChart');
+                if (!barContainer) return;
+                
                 // 柱状图
-                var barChart = echarts.init(document.getElementById('barChart'));
+                var barChart = echarts.init(barContainer);
                 var barOption = {
                     title: { 
                         text: '里程区间统计 - 柱状图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'axis',
@@ -610,7 +758,8 @@
                     grid: {
                         left: '10%',
                         right: '10%',
-                        bottom: '15%'
+                        bottom: '15%',
+                        top: '15%'
                     },
                     xAxis: { 
                         type: 'category', 
@@ -630,14 +779,19 @@
                     }]
                 };
                 barChart.setOption(barOption);
+                chartInstances.barChart = barChart;
 
+                // 检查并初始化饼状图
+                var pieContainer = document.getElementById('pieChart');
+                if (!pieContainer) return;
+                
                 // 饼状图
-                var pieChart = echarts.init(document.getElementById('pieChart'));
+                var pieChart = echarts.init(pieContainer);
                 var pieOption = {
                     title: { 
                         text: '里程区间统计 - 饼状图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'item',
@@ -667,14 +821,19 @@
                     }]
                 };
                 pieChart.setOption(pieOption);
+                chartInstances.pieChart = pieChart;
 
+                // 检查并初始化折线图
+                var lineContainer = document.getElementById('lineChart');
+                if (!lineContainer) return;
+                
                 // 折线图
-                var lineChart = echarts.init(document.getElementById('lineChart'));
+                var lineChart = echarts.init(lineContainer);
                 var lineOption = {
                     title: { 
                         text: '里程区间统计 - 折线图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'axis' 
@@ -682,7 +841,8 @@
                     grid: {
                         left: '10%',
                         right: '10%',
-                        bottom: '15%'
+                        bottom: '15%',
+                        top: '15%'
                     },
                     xAxis: { 
                         type: 'category', 
@@ -703,6 +863,7 @@
                     }]
                 };
                 lineChart.setOption(lineOption);
+                chartInstances.lineChart = lineChart;
             }
 
             // 更新时间相关图表
@@ -714,13 +875,17 @@
                     ).length;
                 });
 
+                // 检查并初始化柱状图
+                var barContainer = document.getElementById('barChart');
+                if (!barContainer) return;
+                
                 // 柱状图
-                var barChart = echarts.init(document.getElementById('barChart'));
+                var barChart = echarts.init(barContainer);
                 var barOption = {
                     title: { 
                         text: '时间区间统计 - 柱状图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'axis',
@@ -729,7 +894,8 @@
                     grid: {
                         left: '10%',
                         right: '10%',
-                        bottom: '15%'
+                        bottom: '15%',
+                        top: '15%'
                     },
                     xAxis: { 
                         type: 'category', 
@@ -749,14 +915,19 @@
                     }]
                 };
                 barChart.setOption(barOption);
+                chartInstances.barChart = barChart;
 
+                // 检查并初始化饼状图
+                var pieContainer = document.getElementById('pieChart');
+                if (!pieContainer) return;
+                
                 // 饼状图
-                var pieChart = echarts.init(document.getElementById('pieChart'));
+                var pieChart = echarts.init(pieContainer);
                 var pieOption = {
                     title: { 
                         text: '时间区间统计 - 饼状图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'item',
@@ -786,14 +957,19 @@
                     }]
                 };
                 pieChart.setOption(pieOption);
+                chartInstances.pieChart = pieChart;
 
+                // 检查并初始化折线图
+                var lineContainer = document.getElementById('lineChart');
+                if (!lineContainer) return;
+                
                 // 折线图
-                var lineChart = echarts.init(document.getElementById('lineChart'));
+                var lineChart = echarts.init(lineContainer);
                 var lineOption = {
                     title: { 
                         text: '时间区间统计 - 折线图', 
                         left: 'center',
-                        fontSize: 16
+                        fontSize: 14
                     },
                     tooltip: { 
                         trigger: 'axis' 
@@ -801,7 +977,8 @@
                     grid: {
                         left: '10%',
                         right: '10%',
-                        bottom: '15%'
+                        bottom: '15%',
+                        top: '15%'
                     },
                     xAxis: { 
                         type: 'category', 
@@ -822,10 +999,127 @@
                     }]
                 };
                 lineChart.setOption(lineOption);
+                chartInstances.lineChart = lineChart;
+            }
+
+            // 更新历史查询条件显示
+            function updateHistoryDisplay() {
+                var historyContainer = document.getElementById('historyContainer');
+                var historySection = document.getElementById('historySection');
+                
+                if (Object.keys(savedQueries).length === 0) {
+                    historySection.style.display = 'none';
+                    return;
+                }
+                
+                historySection.style.display = 'block';
+                historyContainer.innerHTML = '';
+                
+                // 按时间排序，最新的在前面
+                var sortedKeys = Object.keys(savedQueries).sort(function(a, b) {
+                    return savedQueries[b].timestamp - savedQueries[a].timestamp;
+                });
+                
+                sortedKeys.forEach(function(key) {
+                    var query = savedQueries[key];
+                    var div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.setAttribute('data-key', key);
+                    
+                    var typeLabels = {
+                        'age': '年龄查询',
+                        'mileage': '里程查询',
+                        'time': '时间查询'
+                    };
+                    
+                    var rangeText = query.ranges.map(function(range) {
+                        var units = {
+                            'age': '岁',
+                            'mileage': '公里',
+                            'time': '小时'
+                        };
+                        return range.min + '-' + range.max + units[query.type];
+                    }).join(', ');
+                    
+                    div.innerHTML = `
+                        <div>${query.name}</div>
+                        <div class="query-info">${typeLabels[query.type]} | ${rangeText}</div>
+                    `;
+                    div.title = '点击应用此查询条件并自动执行查询';
+                    
+                    div.addEventListener('click', function() {
+                        applyHistoryQuery(key, query);
+                    });
+                    
+                    // 添加删除按钮
+                    var deleteBtn = document.createElement('span');
+                    deleteBtn.innerHTML = ' ×';
+                    deleteBtn.style.cssText = 'margin-left: 5px; cursor: pointer; font-weight: bold; color: #999;';
+                    deleteBtn.title = '删除此查询条件';
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        deleteHistoryQuery(key);
+                    });
+                    div.appendChild(deleteBtn);
+                    
+                    historyContainer.appendChild(div);
+                });
+            }
+            
+            // 应用历史查询条件
+            function applyHistoryQuery(key, query) {
+                // 切换到对应的查询类型
+                document.querySelectorAll('.query-type-selector .layui-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector(`[data-type="${query.type}"]`).classList.add('active');
+                
+                currentQueryType = query.type;
+                updateQueryTitle();
+                clearRanges();
+                
+                // 应用保存的查询条件
+                query.ranges.forEach(function(range) {
+                    addRangeInput(range.min, range.max);
+                });
+                
+                // 高亮当前选中的历史条件
+                document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
+                document.querySelector(`[data-key="${key}"]`).classList.add('active');
+                
+                hideResults();
+                
+                // 自动执行查询
+                setTimeout(function() {
+                    queryData(currentQueryType, query.ranges);
+                }, 100);
+            }
+            
+            // 删除历史查询条件
+            function deleteHistoryQuery(key) {
+                layer.confirm('确定要删除这个查询条件吗？', {
+                    icon: 3,
+                    title: '确认删除'
+                }, function(index) {
+                    delete savedQueries[key];
+                    localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
+                    updateHistoryDisplay();
+                    layer.close(index);
+                    layer.msg('删除成功');
+                });
             }
 
             // 初始化页面
             initRanges();
+            updateHistoryDisplay();
+            
+            // 监听图表标签页切换，确保图表正确显示
+            element.on('tab(chartTabs)', function(data) {
+                setTimeout(function() {
+                    var activeTabId = data.elem.attr('lay-id');
+                    if (chartInstances[activeTabId]) {
+                        chartInstances[activeTabId].resize();
+                    }
+                }, 100);
+            });
         });
     });
 </script>
