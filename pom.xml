@@ -117,10 +117,12 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
+                <configuration>
+                    <mainClass>org.journey.Main</mainClass>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
-                            <!-- 必须添加，否则插件不生效 -->
                             <goal>repackage</goal>
                         </goals>
                     </execution>

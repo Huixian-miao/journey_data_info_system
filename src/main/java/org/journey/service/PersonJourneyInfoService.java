@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 人员旅行信息表(PersonJourneyInfo)表服务接口
@@ -23,7 +24,16 @@ public interface PersonJourneyInfoService extends IService<PersonJourneyInfo> {
     ResponseVO<List<PersonJourneyInfo>> queryByLimit(@RequestBody @Valid UserLimitQuery userLimitQuery);
 
     ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(SelectLimitInfo selectLimitInfo);
-
+    
+    /**
+     * 查询年龄区间统计
+     */
+    List<Integer> queryAgeRangeCounts(List<Map<String, Integer>> ageRanges);
+    
+    /**
+     * 获取查询条件选项
+     */
+    Map<String, List<String>> getQueryOptions();
 
 }
 

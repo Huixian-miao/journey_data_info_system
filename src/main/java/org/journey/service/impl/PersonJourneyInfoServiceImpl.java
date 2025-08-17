@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service;
 
 import javax.validation.Valid;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 人员旅行信息表(PersonJourneyInfo)表服务实现类
@@ -29,6 +30,7 @@ public class PersonJourneyInfoServiceImpl extends ServiceImpl<PersonJourneyInfoD
 
     @Autowired
     private SelectLimitInfoDao selectLimitInfoDao;
+    
     //调用自定义Mapper方法（需XML或注解SQL）
     @Override
     public ResponseVO<List<PersonJourneyInfo>> queryByLimit(@Valid UserLimitQuery userLimitQuery){
@@ -93,6 +95,63 @@ public class PersonJourneyInfoServiceImpl extends ServiceImpl<PersonJourneyInfoD
     public ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(SelectLimitInfo selectLimitInfo) {
         List<SelectLimitInfo> selectLimitInfos = selectLimitInfoDao.queryAllByLimit(selectLimitInfo);
         return ResponseVO.success(selectLimitInfos);
+    }
+    
+    @Override
+    public List<Integer> queryAgeRangeCounts(List<Map<String, Integer>> ageRanges) {
+        List<Integer> counts = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        
+        for (Map<String, Integer> range : ageRanges) {
+            Integer minAge = range.get("minAge");
+            Integer maxAge = range.get("maxAge");
+            
+            if (minAge != null && maxAge != null) {
+                int birthYear2 = currentYear - minAge;
+                int birthYear1 = currentYear - maxAge;
+                
+                // 调用DAO方法查询该年龄区间的记录数
+                List<PersonJourneyInfo> records = personJourneyInfoDao.queryAllByLimit(
+                    birthYear1, birthYear2, 0, 0, 0, 0, 0, Integer.MAX_VALUE, currentYear);
+                
+                counts.add(records.size());
+            } else {
+                counts.add(0);
+            }
+        }
+        
+        return counts;
+    }
+    
+    @Override
+    public Map<String, List<String>> getQueryOptions() {
+        Map<String, List<String>> options = new HashMap<>();
+        
+        // 获取所有数据用于生成选项
+        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+        
+        // 性别选项
+        List<String> genders = allRecords.stream()
+            .map(info -> info.getGender() == 1 ? "男" : "女")
+            .filter(Objects::nonNull)
+            .distinct()
+            .collect(Collectors.toList());
+        options.put("gender", genders);
+        
+        // 年龄范围选项（预设一些常用范围）
+        List<String> ageRanges = Arrays.asList("0-18", "19-30", "31-50", "51-65", "65+");
+        options.put("ageRange", ageRanges);
+        
+        // 旅行时间范围选项
+        List<String> journeyTimeRanges = Arrays.asList("0-10小时", "10-20小时", "20-50小时", "50+小时");
+        options.put("journeyTimeRange", journeyTimeRanges);
+        
+        // 旅行里程范围选项
+        List<String> mileageRanges = Arrays.asList("0-100公里", "100-500公里", "500-1000公里", "1000+公里");
+        options.put("mileageRange", mileageRanges);
+        
+        return options;
     }
 }
 
