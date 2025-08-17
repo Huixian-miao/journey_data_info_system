@@ -49,6 +49,48 @@ public class PersonJourneyInfoController{
     }
     
     /**
+     * 按年龄区间查询
+     */
+    @PostMapping("/queryByAgeRanges")
+    public ResponseVO<List<PersonJourneyInfo>> queryByAgeRanges(@RequestBody Map<String, List<Map<String, Integer>>> request) {
+        try {
+            List<Map<String, Integer>> ageRanges = request.get("ageRanges");
+            List<PersonJourneyInfo> result = personJourneyInfoService.queryByAgeRanges(ageRanges);
+            return ResponseVO.success(result);
+        } catch (Exception e) {
+            return ResponseVO.fail(500, "按年龄区间查询失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 按里程区间查询
+     */
+    @PostMapping("/queryByMileageRanges")
+    public ResponseVO<List<PersonJourneyInfo>> queryByMileageRanges(@RequestBody Map<String, List<Map<String, Integer>>> request) {
+        try {
+            List<Map<String, Integer>> mileageRanges = request.get("mileageRanges");
+            List<PersonJourneyInfo> result = personJourneyInfoService.queryByMileageRanges(mileageRanges);
+            return ResponseVO.success(result);
+        } catch (Exception e) {
+            return ResponseVO.fail(500, "按里程区间查询失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 按时间区间查询
+     */
+    @PostMapping("/queryByTimeRanges")
+    public ResponseVO<List<PersonJourneyInfo>> queryByTimeRanges(@RequestBody Map<String, List<Map<String, Integer>>> request) {
+        try {
+            List<Map<String, Integer>> timeRanges = request.get("timeRanges");
+            List<PersonJourneyInfo> result = personJourneyInfoService.queryByTimeRanges(timeRanges);
+            return ResponseVO.success(result);
+        } catch (Exception e) {
+            return ResponseVO.fail(500, "按时间区间查询失败：" + e.getMessage());
+        }
+    }
+    
+    /**
      * 年龄区间统计接口
      */
     @PostMapping("/queryAgeRangeCounts")

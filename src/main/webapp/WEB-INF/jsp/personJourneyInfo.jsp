@@ -4,104 +4,196 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>人员旅行信息</title>
+    <title>人员旅行信息查询系统</title>
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <!-- 使用国内可访问的CDN -->
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/layui/2.8.18/css/layui.min.css" media="all">
     <script src="https://cdn.bootcdn.net/ajax/libs/layui/2.8.18/layui.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
     <style>
-        body { padding: 20px; font-family: "Microsoft YaHei", Arial, sans-serif; }
-        .layui-card { margin-bottom: 20px; }
-        #ageChart { width: 100%; height: 400px; }
-        .query-form { margin-bottom: 20px; }
-        .layui-form-label { width: 80px; }
-        .layui-input-inline { width: 120px; }
+        body { 
+            padding: 20px; 
+            font-family: "Microsoft YaHei", Arial, sans-serif; 
+            background-color: #f5f5f5;
+        }
+        .layui-card { 
+            margin-bottom: 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .layui-card-header { 
+            background-color: #1E9FFF; 
+            color: white; 
+            font-weight: bold;
+        }
+        .chart-container { 
+            width: 100%; 
+            height: 500px; 
+            margin: 20px 0;
+        }
+        .query-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            border-left: 4px solid #1E9FFF;
+        }
+        .range-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        .range-inputs {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+            flex: 1;
+        }
+        .range-inputs input {
+            width: 100px;
+            margin: 0 8px;
+        }
+        .range-label {
+            font-weight: bold;
+            color: #1E9FFF;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+        .query-type-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .query-type-selector .layui-btn {
+            margin: 0 10px;
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+        .query-type-selector .layui-btn-primary.active {
+            background-color: #1E9FFF;
+            color: white;
+        }
+        .result-section {
+            margin-top: 30px;
+        }
+        .chart-section {
+            margin-top: 30px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .chart-tabs {
+            margin-bottom: 20px;
+        }
+        .chart-tabs .layui-tab-title li {
+            font-size: 16px;
+            padding: 10px 20px;
+        }
     </style>
 </head>
 <body>
 
-<!-- 查询条件表单 -->
+<!-- 查询条件区域 -->
 <div class="layui-card">
-    <div class="layui-card-header">查询条件</div>
+    <div class="layui-card-header">查询条件设置</div>
     <div class="layui-card-body">
-        <form class="layui-form query-form" lay-filter="queryForm">
-            <div class="layui-form-item">
-                <div class="layui-inline">
-                    <label class="layui-form-label">年龄范围</label>
-                    <div class="layui-input-inline">
-                        <input type="number" name="age1" placeholder="最小年龄" autocomplete="off" class="layui-input">
-                    </div>
-                    <div class="layui-form-mid">-</div>
-                    <div class="layui-input-inline">
-                        <input type="number" name="age2" placeholder="最大年龄" autocomplete="off" class="layui-input">
-                    </div>
-                </div>
-                <div class="layui-inline">
-                    <label class="layui-form-label">旅行里程</label>
-                    <div class="layui-input-inline">
-                        <input type="number" name="mileAge1" placeholder="最小里程" autocomplete="off" class="layui-input">
-                    </div>
-                    <div class="layui-form-mid">-</div>
-                    <div class="layui-input-inline">
-                        <input type="number" name="mileAge2" placeholder="最大里程" autocomplete="off" class="layui-input">
-                    </div>
-                </div>
-                <div class="layui-inline">
-                    <label class="layui-form-label">旅行时间</label>
-                    <div class="layui-input-inline">
-                        <input type="number" name="journeyTime1" placeholder="最小时间" autocomplete="off" class="layui-input">
-                    </div>
-                    <div class="layui-form-mid">-</div>
-                    <div class="layui-input-inline">
-                        <input type="number" name="journeyTime2" placeholder="最大时间" autocomplete="off" class="layui-input">
+        
+        <!-- 查询类型选择器 -->
+        <div class="query-type-selector">
+            <button type="button" class="layui-btn layui-btn-primary active" data-type="age">
+                📊 按出生年份查询
+            </button>
+            <button type="button" class="layui-btn layui-btn-primary" data-type="mileage">
+                ✈️ 按飞行里程查询
+            </button>
+            <button type="button" class="layui-btn layui-btn-primary" data-type="time">
+                ⏰ 按飞行时间查询
+            </button>
+        </div>
+        
+        <!-- 动态查询表单 -->
+        <div class="query-section">
+            <h3 id="queryTitle" style="color: #1E9FFF; margin-bottom: 15px;">📊 按出生年份查询</h3>
+            <form class="layui-form" lay-filter="queryForm">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">查询区间</label>
+                    <div class="layui-input-block">
+                        <div id="rangesContainer">
+                            <!-- 区间输入框将在这里动态生成 -->
+                        </div>
+                        <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="addRangeBtn">
+                            <i class="layui-icon layui-icon-add-1"></i> 添加区间
+                        </button>
                     </div>
                 </div>
-            </div>
-            <div class="layui-form-item">
-                <div class="layui-input-block">
-                    <button class="layui-btn" lay-submit lay-filter="queryData">查询数据</button>
-                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="queryData">
+                            <i class="layui-icon layui-icon-search"></i> 查询数据
+                        </button>
+                        <button type="button" class="layui-btn layui-btn-primary" id="clearBtn">
+                            <i class="layui-icon layui-icon-refresh"></i> 清空条件
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
 
-<div class="layui-card">
-    <div class="layui-card-header">人员旅行信息列表</div>
+<!-- 查询结果展示区域 -->
+<div class="layui-card result-section" id="resultSection" style="display: none;">
+    <div class="layui-card-header">查询结果</div>
     <div class="layui-card-body">
-        <table class="layui-hide" id="personJourneyTable" lay-filter="personJourneyTable"></table>
-    </div>
-</div>
-
-<div class="layui-card">
-    <div class="layui-card-header">年龄区间段统计</div>
-    <div class="layui-card-body">
-        <form class="layui-form" lay-filter="ageRangeForm">
-            <div class="layui-form-item">
-                <label class="layui-form-label">年龄区间</label>
-                <div class="layui-input-block">
-                    <div id="ageRangesContainer"></div>
-                    <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="addAgeRangeBtn">添加区间</button>
+        
+        <!-- 数据列表 -->
+        <div class="layui-card">
+            <div class="layui-card-header">📋 数据列表</div>
+            <div class="layui-card-body">
+                <table class="layui-hide" id="resultTable" lay-filter="resultTable"></table>
+            </div>
+        </div>
+        
+        <!-- 图表展示区域 -->
+        <div class="chart-section" id="chartSection" style="display: none;">
+            <div class="layui-card-header">📊 图表展示</div>
+            <div class="layui-card-body">
+                <!-- 图表切换标签 -->
+                <div class="chart-tabs">
+                    <div class="layui-tab layui-tab-brief" lay-filter="chartTabs">
+                        <ul class="layui-tab-title">
+                            <li class="layui-this" lay-id="barChart">📊 柱状图</li>
+                            <li lay-id="pieChart">🥧 饼状图</li>
+                            <li lay-id="lineChart">📈 折线图</li>
+                        </ul>
+                        <div class="layui-tab-content">
+                            <!-- 柱状图 -->
+                            <div class="layui-tab-item layui-show">
+                                <div id="barChart" class="chart-container"></div>
+                            </div>
+                            
+                            <!-- 饼状图 -->
+                            <div class="layui-tab-item">
+                                <div id="pieChart" class="chart-container"></div>
+                            </div>
+                            
+                            <!-- 折线图 -->
+                            <div class="layui-tab-item">
+                                <div id="lineChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="layui-form-item">
-                <div class="layui-input-block">
-                    <button class="layui-btn" lay-submit lay-filter="queryAgeChart">查询图表</button>
-                </div>
-            </div>
-        </form>
-        <div id="ageChart"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    // 等待页面和资源加载完成
     document.addEventListener('DOMContentLoaded', function() {
-        // 检查依赖是否加载成功
         if (typeof layui === 'undefined') {
             console.error('Layui 未加载成功');
             document.body.innerHTML = '<div style="text-align:center;padding:50px;color:red;">页面加载失败：Layui框架未加载成功，请检查网络连接</div>';
@@ -114,32 +206,27 @@
             return;
         }
 
-        layui.use(['table', 'layer', 'form'], function () {
+        layui.use(['table', 'layer', 'form', 'element'], function () {
             var table = layui.table;
             var layer = layui.layer;
             var form = layui.form;
+            var element = layui.element;
+
+            // 全局变量
+            var currentQueryType = 'age';
+            var currentQueryData = [];
+            var currentQueryRanges = [];
+            var rangeIndex = 0;
 
             // 初始化表格
             var tableIns = table.render({
-                elem: '#personJourneyTable'
-                , url: '/personJourneyInfo/queryByPage'
-                , method: 'post'
-                , contentType: 'application/json'
-                , parseData: function (res) {
-                    return {
-                        "code": res.code === 200 ? 0 : res.code,
-                        "msg": res.message,
-                        "count": res.data ? res.data.total : 0,
-                        "data": res.data ? res.data.records : []
-                    };
-                }
-                , request: {
-                    pageName: 'page'
-                    , limitName: 'size'
-                }
+                elem: '#resultTable'
                 , cols: [[
                     {field: 'personId', title: '人员ID', width: 100, sort: true}
                     , {field: 'birthYear', title: '出生年份', width: 120, sort: true}
+                    , {field: 'age', title: '年龄', width: 80, templet: function(d){
+                        return new Date().getFullYear() - d.birthYear;
+                    }}
                     , {field: 'gender', title: '性别', width: 80, templet: function(d){
                         return d.gender == 1 ? '男' : '女';
                     }}
@@ -150,160 +237,595 @@
                 , limit: 20
                 , limits: [10, 20, 30, 40, 50]
                 , height: 400
+                , text: {
+                    none: '暂无数据，请先设置查询条件进行查询'
+                }
+            });
+
+            // 查询类型切换
+            document.querySelectorAll('.query-type-selector .layui-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.query-type-selector .layui-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentQueryType = this.getAttribute('data-type');
+                    updateQueryTitle();
+                    clearRanges();
+                    initRanges();
+                    hideResults();
+                });
+            });
+
+            // 更新查询标题
+            function updateQueryTitle() {
+                var titles = {
+                    'age': '📊 按出生年份查询',
+                    'mileage': '✈️ 按飞行里程查询',
+                    'time': '⏰ 按飞行时间查询'
+                };
+                document.getElementById('queryTitle').textContent = titles[currentQueryType];
+            }
+
+            // 初始化区间
+            function initRanges() {
+                var ranges = {
+                    'age': [{min: 0, max: 18}, {min: 19, max: 30}, {min: 31, max: 50}, {min: 51, max: 100}],
+                    'mileage': [{min: 0, max: 100}, {min: 100, max: 500}, {min: 500, max: 1000}, {min: 1000, max: 5000}],
+                    'time': [{min: 0, max: 10}, {min: 10, max: 20}, {min: 20, max: 50}, {min: 50, max: 100}]
+                };
+                
+                ranges[currentQueryType].forEach(function(range) {
+                    addRangeInput(range.min, range.max);
+                });
+            }
+
+            // 添加区间输入框
+            function addRangeInput(min = '', max = '') {
+                var container = document.getElementById('rangesContainer');
+                var div = document.createElement('div');
+                div.className = 'range-item';
+                div.setAttribute('data-index', rangeIndex);
+                
+                var labels = {
+                    'age': '年龄区间',
+                    'mileage': '里程区间',
+                    'time': '时间区间'
+                };
+                
+                var units = {
+                    'age': '岁',
+                    'mileage': '公里',
+                    'time': '小时'
+                };
+                
+                div.innerHTML = `
+                    <div class="range-label">${labels[currentQueryType]}</div>
+                    <div class="range-inputs">
+                        <input type="number" placeholder="最小值" autocomplete="off" class="layui-input" value="${min}">
+                        <span style="padding: 0 8px; color: #666;">-</span>
+                        <input type="number" placeholder="最大值" autocomplete="off" class="layui-input" value="${max}">
+                        <span style="margin-left: 8px; color: #999;">${units[currentQueryType]}</span>
+                    </div>
+                    <button type="button" class="layui-btn layui-btn-danger layui-btn-sm removeRangeBtn">删除</button>
+                `;
+                container.appendChild(div);
+                rangeIndex++;
+            }
+
+            // 清空区间
+            function clearRanges() {
+                document.getElementById('rangesContainer').innerHTML = '';
+                rangeIndex = 0;
+            }
+
+            // 绑定按钮事件
+            document.getElementById('addRangeBtn').addEventListener('click', function() {
+                addRangeInput();
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', function() {
+                clearRanges();
+                initRanges();
+                hideResults();
+            });
+
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('removeRangeBtn')) {
+                    e.target.closest('.range-item').remove();
+                }
             });
 
             // 查询表单提交
             form.on('submit(queryData)', function(data) {
-                var formData = data.field;
+                var ranges = getRanges();
+                if (ranges.length === 0) {
+                    layer.msg('请至少添加一个查询区间');
+                    return false;
+                }
                 
-                // 构建查询参数
-                var queryParams = {
-                    page: 1,
-                    size: 20,
-                    age1: parseInt(formData.age1) || 0,
-                    age2: parseInt(formData.age2) || 0,
-                    mileAge1: parseInt(formData.mileAge1) || 0,
-                    mileAge2: parseInt(formData.mileAge2) || 0,
-                    journeyTime1: parseInt(formData.journeyTime1) || 0,
-                    journeyTime2: parseInt(formData.journeyTime2) || 0
-                };
+                if (currentQueryType === 'time' && checkTimeRangeOverlap(ranges)) {
+                    layer.msg('时间区间不允许重叠，请重新设置');
+                    return false;
+                }
                 
-                // 重新加载表格数据
-                tableIns.reload({
-                    where: queryParams,
-                    page: {curr: 1}
-                });
-                
+                queryData(currentQueryType, ranges);
                 return false;
             });
 
-            // Echarts图表初始化
-            var myChart = echarts.init(document.getElementById('ageChart'));
-            var ageRangeIndex = 0;
-
-            function addAgeRangeInput(min = '', max = '') {
-                var container = document.getElementById('ageRangesContainer');
-                var div = document.createElement('div');
-                div.className = 'layui-input-inline';
-                div.style.marginBottom = '10px';
-                div.innerHTML = `
-                    <input type="number" name="minAge_${ageRangeIndex}" placeholder="最小年龄" autocomplete="off" class="layui-input" value="${min}" style="width: 100px;">
-                    <span style="padding: 0 5px;">-</span>
-                    <input type="number" name="maxAge_${ageRangeIndex}" placeholder="最大年龄" autocomplete="off" class="layui-input" value="${max}" style="width: 100px;">
-                    <button type="button" class="layui-btn layui-btn-danger layui-btn-sm removeAgeRangeBtn">删除</button>
-                `;
-                container.appendChild(div);
-                ageRangeIndex++;
-            }
-
-            // 添加初始年龄区间
-            addAgeRangeInput(0, 18);
-            addAgeRangeInput(19, 30);
-            addAgeRangeInput(31, 50);
-            addAgeRangeInput(51, 100);
-
-            // 添加年龄区间按钮
-            document.getElementById('addAgeRangeBtn').addEventListener('click', function() {
-                addAgeRangeInput();
-            });
-
-            // 删除年龄区间按钮
-            document.getElementById('ageRangesContainer').addEventListener('click', function(e) {
-                if (e.target.classList.contains('removeAgeRangeBtn')) {
-                    e.target.closest('.layui-input-inline').remove();
-                }
-            });
-
-            // 查询年龄统计图表
-            form.on('submit(queryAgeChart)', function (data) {
-                var ageRanges = [];
-                var inputs = document.querySelectorAll('#ageRangesContainer input[type="number"]');
-                
+            // 获取区间数据
+            function getRanges() {
+                var ranges = [];
+                var inputs = document.querySelectorAll('#rangesContainer input[type="number"]');
                 for (var i = 0; i < inputs.length; i += 2) {
-                    var minAge = inputs[i].value;
-                    var maxAge = inputs[i + 1].value;
-                    if (minAge !== '' && maxAge !== '') {
-                        ageRanges.push({ 
-                            minAge: parseInt(minAge), 
-                            maxAge: parseInt(maxAge) 
-                        });
+                    var min = inputs[i].value;
+                    var max = inputs[i + 1].value;
+                    if (min !== '' && max !== '') {
+                        ranges.push({ min: parseInt(min), max: parseInt(max) });
                     }
                 }
+                return ranges;
+            }
 
-                if (ageRanges.length === 0) {
-                    layer.msg('请至少添加一个年龄区间');
-                    return false;
+            // 检查时间区间重叠
+            function checkTimeRangeOverlap(ranges) {
+                for (var i = 0; i < ranges.length; i++) {
+                    for (var j = i + 1; j < ranges.length; j++) {
+                        if (ranges[i].max > ranges[j].min && ranges[i].min < ranges[j].max) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            // 查询数据
+            function queryData(type, ranges) {
+                var url = '';
+                var requestData = {};
+                
+                switch(type) {
+                    case 'age':
+                        url = '/personJourneyInfo/queryByAgeRanges';
+                        requestData = { ageRanges: ranges };
+                        break;
+                    case 'mileage':
+                        url = '/personJourneyInfo/queryByMileageRanges';
+                        requestData = { mileageRanges: ranges };
+                        break;
+                    case 'time':
+                        url = '/personJourneyInfo/queryByTimeRanges';
+                        requestData = { timeRanges: ranges };
+                        break;
                 }
 
-                // 调用后端接口获取年龄统计数据
+                layer.load(1, {shade: [0.3, '#000']});
+
                 layui.$.ajax({
-                    url: '/personJourneyInfo/queryAgeRangeCounts',
+                    url: url,
                     type: 'post',
                     contentType: 'application/json',
-                    data: JSON.stringify(ageRanges),
+                    data: JSON.stringify(requestData),
                     dataType: 'json',
                     success: function (res) {
+                        layer.closeAll('loading');
                         if (res.code === 200) {
-                            var categories = ageRanges.map(range => `${range.minAge}-${range.maxAge}岁`);
-                            updateChart(categories, res.data);
-                            layer.msg('图表数据更新成功');
+                            currentQueryData = res.data;
+                            currentQueryRanges = ranges;
+                            updateTable(res.data);
+                            updateCharts(type, ranges, res.data);
+                            showResults();
+                            layer.msg('查询成功，共找到 ' + res.data.length + ' 条记录');
                         } else {
-                            layer.msg('获取图表数据失败：' + res.message);
+                            layer.msg('查询失败：' + res.message);
                         }
                     },
                     error: function (xhr, status, error) {
-                        layer.msg('请求图表数据失败：' + error);
+                        layer.closeAll('loading');
+                        layer.msg('查询失败：' + error);
                         console.error('Error:', error);
                     }
                 });
+            }
 
-                return false;
-            });
+            // 显示/隐藏结果区域
+            function showResults() {
+                document.getElementById('resultSection').style.display = 'block';
+                if (currentQueryData.length > 0) {
+                    document.getElementById('chartSection').style.display = 'block';
+                }
+            }
 
-            function updateChart(categories, data) {
-                var option = {
-                    title: {
-                        text: '不同年龄区间旅行记录统计',
-                        left: 'center'
+            function hideResults() {
+                document.getElementById('resultSection').style.display = 'none';
+                document.getElementById('chartSection').style.display = 'none';
+            }
+
+            // 更新表格
+            function updateTable(data) {
+                tableIns.reload({
+                    data: data,
+                    page: {curr: 1}
+                });
+            }
+
+            // 更新图表
+            function updateCharts(type, ranges, data) {
+                if (data.length === 0) return;
+
+                switch(type) {
+                    case 'age':
+                        updateAgeCharts(ranges, data);
+                        break;
+                    case 'mileage':
+                        updateMileageCharts(ranges, data);
+                        break;
+                    case 'time':
+                        updateTimeCharts(ranges, data);
+                        break;
+                }
+            }
+
+            // 更新年龄相关图表
+            function updateAgeCharts(ranges, data) {
+                var categories = ranges.map(range => `${range.min}-${range.max}岁`);
+                var counts = ranges.map(range => {
+                    var currentYear = new Date().getFullYear();
+                    return data.filter(item => {
+                        var age = currentYear - item.birthYear;
+                        return age >= range.min && age <= range.max;
+                    }).length;
+                });
+
+                // 柱状图
+                var barChart = echarts.init(document.getElementById('barChart'));
+                var barOption = {
+                    title: { 
+                        text: '年龄区间统计 - 柱状图', 
+                        left: 'center',
+                        fontSize: 16
                     },
-                    tooltip: {
+                    tooltip: { 
                         trigger: 'axis',
-                        axisPointer: {
-                            type: 'shadow'
-                        }
+                        axisPointer: { type: 'shadow' }
                     },
-                    legend: {
-                        data: ['记录总数'],
-                        top: 30
+                    grid: {
+                        left: '10%',
+                        right: '10%',
+                        bottom: '15%'
                     },
-                    xAxis: {
-                        type: 'category',
+                    xAxis: { 
+                        type: 'category', 
                         data: categories,
-                        axisLabel: {
-                            rotate: 45
-                        }
+                        axisLabel: { rotate: 45 }
                     },
-                    yAxis: {
-                        type: 'value',
-                        name: '记录数量'
+                    yAxis: { 
+                        type: 'value', 
+                        name: '记录数量' 
                     },
                     series: [{
-                        name: '记录总数',
+                        name: '记录数量',
                         type: 'bar',
-                        data: data,
-                        itemStyle: {
-                            color: '#1E9FFF'
+                        data: counts,
+                        itemStyle: { color: '#1E9FFF' },
+                        barWidth: '60%'
+                    }]
+                };
+                barChart.setOption(barOption);
+
+                // 饼状图
+                var pieChart = echarts.init(document.getElementById('pieChart'));
+                var pieOption = {
+                    title: { 
+                        text: '年龄区间统计 - 饼状图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        top: 'middle'
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['60%', '50%'],
+                        data: categories.map((cat, index) => ({
+                            name: cat,
+                            value: counts[index]
+                        })),
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
                         }
                     }]
                 };
-                myChart.setOption(option);
+                pieChart.setOption(pieOption);
+
+                // 折线图
+                var lineChart = echarts.init(document.getElementById('lineChart'));
+                var lineOption = {
+                    title: { 
+                        text: '年龄区间统计 - 折线图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'axis' 
+                    },
+                    grid: {
+                        left: '10%',
+                        right: '10%',
+                        bottom: '15%'
+                    },
+                    xAxis: { 
+                        type: 'category', 
+                        data: categories 
+                    },
+                    yAxis: { 
+                        type: 'value', 
+                        name: '记录数量' 
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'line',
+                        data: counts,
+                        itemStyle: { color: '#1E9FFF' },
+                        lineStyle: { color: '#1E9FFF', width: 3 },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }]
+                };
+                lineChart.setOption(lineOption);
             }
 
-            // 页面加载完成后初始化图表
-            setTimeout(function() {
-                // 触发一次年龄统计查询，显示初始图表
-                form.on('submit(queryAgeChart)', function(data){ return false; }).call(this, {field: form.val('ageRangeForm')});
-            }, 1000);
+            // 更新里程相关图表
+            function updateMileageCharts(ranges, data) {
+                var categories = ranges.map(range => `${range.min}-${range.max}公里`);
+                var counts = ranges.map(range => {
+                    return data.filter(item => 
+                        item.totalMileage >= range.min && item.totalMileage <= range.max
+                    ).length;
+                });
+
+                // 柱状图
+                var barChart = echarts.init(document.getElementById('barChart'));
+                var barOption = {
+                    title: { 
+                        text: '里程区间统计 - 柱状图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    grid: {
+                        left: '10%',
+                        right: '10%',
+                        bottom: '15%'
+                    },
+                    xAxis: { 
+                        type: 'category', 
+                        data: categories,
+                        axisLabel: { rotate: 45 }
+                    },
+                    yAxis: { 
+                        type: 'value', 
+                        name: '记录数量' 
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'bar',
+                        data: counts,
+                        itemStyle: { color: '#67C23A' },
+                        barWidth: '60%'
+                    }]
+                };
+                barChart.setOption(barOption);
+
+                // 饼状图
+                var pieChart = echarts.init(document.getElementById('pieChart'));
+                var pieOption = {
+                    title: { 
+                        text: '里程区间统计 - 饼状图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        top: 'middle'
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['60%', '50%'],
+                        data: categories.map((cat, index) => ({
+                            name: cat,
+                            value: counts[index]
+                        })),
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }]
+                };
+                pieChart.setOption(pieOption);
+
+                // 折线图
+                var lineChart = echarts.init(document.getElementById('lineChart'));
+                var lineOption = {
+                    title: { 
+                        text: '里程区间统计 - 折线图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'axis' 
+                    },
+                    grid: {
+                        left: '10%',
+                        right: '10%',
+                        bottom: '15%'
+                    },
+                    xAxis: { 
+                        type: 'category', 
+                        data: categories 
+                    },
+                    yAxis: { 
+                        type: 'value', 
+                        name: '记录数量' 
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'line',
+                        data: counts,
+                        itemStyle: { color: '#67C23A' },
+                        lineStyle: { color: '#67C23A', width: 3 },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }]
+                };
+                lineChart.setOption(lineOption);
+            }
+
+            // 更新时间相关图表
+            function updateTimeCharts(ranges, data) {
+                var categories = ranges.map(range => `${range.min}-${range.max}小时`);
+                var counts = ranges.map(range => {
+                    return data.filter(item => 
+                        item.totalJourneyTime >= range.min && item.totalJourneyTime <= range.max
+                    ).length;
+                });
+
+                // 柱状图
+                var barChart = echarts.init(document.getElementById('barChart'));
+                var barOption = {
+                    title: { 
+                        text: '时间区间统计 - 柱状图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    grid: {
+                        left: '10%',
+                        right: '10%',
+                        bottom: '15%'
+                    },
+                    xAxis: { 
+                        type: 'category', 
+                        data: categories,
+                        axisLabel: { rotate: 45 }
+                    },
+                    yAxis: { 
+                        type: 'value', 
+                        name: '记录数量' 
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'bar',
+                        data: counts,
+                        itemStyle: { color: '#E6A23C' },
+                        barWidth: '60%'
+                    }]
+                };
+                barChart.setOption(barOption);
+
+                // 饼状图
+                var pieChart = echarts.init(document.getElementById('pieChart'));
+                var pieOption = {
+                    title: { 
+                        text: '时间区间统计 - 饼状图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        top: 'middle'
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['60%', '50%'],
+                        data: categories.map((cat, index) => ({
+                            name: cat,
+                            value: counts[index]
+                        })),
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }]
+                };
+                pieChart.setOption(pieOption);
+
+                // 折线图
+                var lineChart = echarts.init(document.getElementById('lineChart'));
+                var lineOption = {
+                    title: { 
+                        text: '时间区间统计 - 折线图', 
+                        left: 'center',
+                        fontSize: 16
+                    },
+                    tooltip: { 
+                        trigger: 'axis' 
+                    },
+                    grid: {
+                        left: '10%',
+                        right: '10%',
+                        bottom: '15%'
+                    },
+                    xAxis: { 
+                        type: 'category', 
+                        data: categories 
+                    },
+                    yAxis: { 
+                        type: 'value', 
+                        name: '记录数量' 
+                    },
+                    series: [{
+                        name: '记录数量',
+                        type: 'line',
+                        data: counts,
+                        itemStyle: { color: '#E6A23C' },
+                        lineStyle: { color: '#E6A23C', width: 3 },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }]
+                };
+                lineChart.setOption(lineOption);
+            }
+
+            // 初始化页面
+            initRanges();
         });
     });
 </script>

@@ -26,6 +26,21 @@ public interface PersonJourneyInfoService extends IService<PersonJourneyInfo> {
     ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(SelectLimitInfo selectLimitInfo);
     
     /**
+     * 按年龄区间查询
+     */
+    List<PersonJourneyInfo> queryByAgeRanges(List<Map<String, Integer>> ageRanges);
+    
+    /**
+     * 按里程区间查询
+     */
+    List<PersonJourneyInfo> queryByMileageRanges(List<Map<String, Integer>> mileageRanges);
+    
+    /**
+     * 按时间区间查询
+     */
+    List<PersonJourneyInfo> queryByTimeRanges(List<Map<String, Integer>> timeRanges);
+    
+    /**
      * 查询年龄区间统计
      */
     List<Integer> queryAgeRangeCounts(List<Map<String, Integer>> ageRanges);

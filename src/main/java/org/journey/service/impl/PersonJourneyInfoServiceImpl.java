@@ -153,5 +153,66 @@ public class PersonJourneyInfoServiceImpl extends ServiceImpl<PersonJourneyInfoD
         
         return options;
     }
+    
+    @Override
+    public List<PersonJourneyInfo> queryByAgeRanges(List<Map<String, Integer>> ageRanges) {
+        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+        List<PersonJourneyInfo> result = new ArrayList<>();
+        int currentYear = LocalDate.now().getYear();
+        
+        for (PersonJourneyInfo record : allRecords) {
+            int age = currentYear - record.getBirthYear();
+            for (Map<String, Integer> range : ageRanges) {
+                Integer minAge = range.get("min");
+                Integer maxAge = range.get("max");
+                if (minAge != null && maxAge != null && age >= minAge && age <= maxAge) {
+                    result.add(record);
+                    break; // 一个记录只添加一次
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    @Override
+    public List<PersonJourneyInfo> queryByMileageRanges(List<Map<String, Integer>> mileageRanges) {
+        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+        List<PersonJourneyInfo> result = new ArrayList<>();
+        
+        for (PersonJourneyInfo record : allRecords) {
+            for (Map<String, Integer> range : mileageRanges) {
+                Integer minMileage = range.get("min");
+                Integer maxMileage = range.get("max");
+                if (minMileage != null && maxMileage != null && 
+                    record.getTotalMileage() >= minMileage && record.getTotalMileage() <= maxMileage) {
+                    result.add(record);
+                    break; // 一个记录只添加一次
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    @Override
+    public List<PersonJourneyInfo> queryByTimeRanges(List<Map<String, Integer>> timeRanges) {
+        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+        List<PersonJourneyInfo> result = new ArrayList<>();
+        
+        for (PersonJourneyInfo record : allRecords) {
+            for (Map<String, Integer> range : timeRanges) {
+                Integer minTime = range.get("min");
+                Integer maxTime = range.get("max");
+                if (minTime != null && maxTime != null && 
+                    record.getTotalJourneyTime() >= minTime && record.getTotalJourneyTime() <= maxTime) {
+                    result.add(record);
+                    break; // 一个记录只添加一次
+                }
+            }
+        }
+        
+        return result;
+    }
 }
 
