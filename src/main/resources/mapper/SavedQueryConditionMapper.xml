@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.journey.dao.SavedQueryConditionMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="org.journey.entity.SavedQueryCondition">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="VARCHAR"/>
+        <result column="query_name" property="queryName" jdbcType="VARCHAR"/>
+        <result column="query_type" property="queryType" jdbcType="VARCHAR"/>
+        <result column="query_ranges" property="queryRanges" jdbcType="LONGVARCHAR"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+        <result column="is_active" property="isActive" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, query_name, query_type, query_ranges, created_time, updated_time, is_active
+    </sql>
+
+    <!-- 根据用户ID查询所有有效的查询条件 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM saved_query_conditions
+        WHERE user_id = #{userId}
+        AND is_active = 1
+        ORDER BY created_time DESC
+    </select>
+
+    <!-- 根据用户ID和查询类型查询查询条件 -->
+    <select id="selectByUserIdAndType" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM saved_query_conditions
+        WHERE user_id = #{userId}
+        AND query_type = #{queryType}
+        AND is_active = 1
+        ORDER BY created_time DESC
+    </select>
+
+    <!-- 软删除查询条件 -->
+    <update id="softDeleteById">
+        UPDATE saved_query_conditions
+        SET is_active = 0,
+            updated_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper> 
