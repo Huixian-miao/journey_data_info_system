@@ -6,10 +6,6 @@ spring:
     password: Yyqx1128!@
     url: jdbc:mysql://127.0.0.1:3306/dataselectdbx
     driver-class-name: com.mysql.cj.jdbc.Driver
-  mvc:
-    view:
-      prefix: /person/  # JSP 文件所在目录：webapp/person/
-      suffix: .jsp      # JSP 文件后缀
 # application.yml
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
