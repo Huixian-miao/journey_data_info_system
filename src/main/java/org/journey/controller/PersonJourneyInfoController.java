@@ -5,13 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.journey.dao.dto.UserLimitQuery;
 import org.journey.dao.vo.ResponseVO;
 import org.journey.entity.PersonJourneyInfo;
+import org.journey.entity.SavedQueryCondition;
 import org.journey.entity.SelectLimitInfo;
 import org.journey.service.PersonJourneyInfoService;
+import org.journey.service.SavedQueryConditionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -29,6 +28,9 @@ public class PersonJourneyInfoController{
 
     @Autowired
     private PersonJourneyInfoService personJourneyInfoService;
+    
+    @Autowired
+    private SavedQueryConditionService savedQueryConditionService;
     
     // Service
     @PostMapping("/queryByPage")
@@ -114,6 +116,57 @@ public class PersonJourneyInfoController{
         } catch (Exception e) {
             return ResponseVO.fail(500, "获取查询选项失败：" + e.getMessage());
         }
+    }
+    
+    /**
+     * 保存查询条件
+     */
+    @PostMapping("/saveQueryCondition")
+    public ResponseVO<SavedQueryCondition> saveQueryCondition(@RequestBody Map<String, Object> request) {
+        try {
+            String queryName = (String) request.get("queryName");
+            String queryType = (String) request.get("queryType");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Integer>> queryRanges = (List<Map<String, Integer>>) request.get("queryRanges");
+            
+            if (queryName == null || queryName.trim().isEmpty()) {
+                return ResponseVO.fail(400, "查询条件名称不能为空");
+            }
+            if (queryType == null || !java.util.Arrays.asList("age", "mileage", "time").contains(queryType)) {
+                return ResponseVO.fail(400, "查询类型无效");
+            }
+            if (queryRanges == null || queryRanges.isEmpty()) {
+                return ResponseVO.fail(400, "查询区间不能为空");
+            }
+            
+            return savedQueryConditionService.saveQueryCondition(queryName, queryType, queryRanges);
+        } catch (Exception e) {
+            return ResponseVO.fail(500, "保存查询条件失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取用户的所有查询条件
+     */
+    @GetMapping("/getQueryConditions")
+    public ResponseVO<List<SavedQueryCondition>> getQueryConditions(@RequestParam(defaultValue = "default_user") String userId) {
+        return savedQueryConditionService.getQueryConditionsByUserId(userId);
+    }
+    
+    /**
+     * 根据ID删除查询条件
+     */
+    @DeleteMapping("/deleteQueryCondition/{id}")
+    public ResponseVO<Boolean> deleteQueryCondition(@PathVariable Long id) {
+        return savedQueryConditionService.deleteQueryConditionById(id);
+    }
+    
+    /**
+     * 根据ID获取查询条件
+     */
+    @GetMapping("/getQueryCondition/{id}")
+    public ResponseVO<SavedQueryCondition> getQueryCondition(@PathVariable Long id) {
+        return savedQueryConditionService.getQueryConditionById(id);
     }
 }
 

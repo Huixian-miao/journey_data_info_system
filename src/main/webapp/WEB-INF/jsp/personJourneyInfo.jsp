@@ -216,6 +216,15 @@
                     <button type="button" class="layui-btn layui-btn-sm" id="saveQueryBtn">
                         <i class="layui-icon layui-icon-save"></i> 保存
                     </button>
+                    <button type="button" class="layui-btn layui-btn-sm layui-btn-warm" id="cleanQueryBtn" title="清理无效的查询条件">
+                        <i class="layui-icon layui-icon-refresh-3"></i> 清理
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" id="resetQueryBtn" title="清空所有保存的查询条件">
+                        <i class="layui-icon layui-icon-delete"></i> 重置
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="debugQueryBtn" title="调试保存的查询条件">
+                        <i class="layui-icon layui-icon-console"></i> 调试
+                    </button>
                 </div>
                 <div style="margin-top: 5px; font-size: 11px; color: #52c41a; line-height: 1.3;">
                     💾 保存当前查询条件，方便下次快速使用
@@ -317,7 +326,7 @@
             var currentQueryData = [];
             var currentQueryRanges = [];
             var rangeIndex = 0;
-            var savedQueries = JSON.parse(localStorage.getItem('savedQueries') || '{}');
+            var savedQueries = {}; // 改为空对象，从数据库加载
             
             // 图表实例存储
             var chartInstances = {
@@ -460,18 +469,60 @@
                     return;
                 }
                 
-                var queryKey = currentQueryType + '_' + Date.now();
-                savedQueries[queryKey] = {
-                    name: queryName,
-                    type: currentQueryType,
-                    ranges: ranges,
-                    timestamp: Date.now()
+                // 调用后端API保存查询条件
+                var requestData = {
+                    queryName: queryName,
+                    queryType: currentQueryType,
+                    queryRanges: ranges
                 };
                 
-                localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
-                document.getElementById('queryName').value = '';
-                updateHistoryDisplay();
-                layer.msg('查询条件保存成功');
+                layer.load(1, {shade: [0.3, '#000']});
+                
+                layui.$.ajax({
+                    url: '/personJourneyInfo/saveQueryCondition',
+                    type: 'post',
+                    contentType: 'application/json',
+                    data: JSON.stringify(requestData),
+                    dataType: 'json',
+                    success: function (res) {
+                        layer.closeAll('loading');
+                        if (res.code === 200) {
+                            document.getElementById('queryName').value = '';
+                            layer.msg('查询条件保存成功');
+                            // 重新加载查询条件列表
+                            loadSavedQueryConditions();
+                        } else {
+                            layer.msg('保存失败：' + res.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        layer.closeAll('loading');
+                        layer.msg('保存失败：' + error);
+                        console.error('Error:', error);
+                    }
+                });
+            });
+            
+            // 清理无效查询条件
+            document.getElementById('cleanQueryBtn').addEventListener('click', function() {
+                var cleaned = cleanSavedQueries();
+                if (cleaned) {
+                    updateHistoryDisplay();
+                    layer.msg('已清理无效的查询条件');
+                } else {
+                    layer.msg('没有发现无效的查询条件');
+                }
+            });
+            
+            // 重置所有查询条件
+            document.getElementById('resetQueryBtn').addEventListener('click', function() {
+                resetSavedQueries();
+            });
+            
+            // 调试保存的查询条件
+            document.getElementById('debugQueryBtn').addEventListener('click', function() {
+                debugSavedQueries();
+                layer.msg('调试信息已输出到控制台，请查看');
             });
 
             document.addEventListener('click', function(e) {
@@ -619,7 +670,12 @@
             
             // 更新图表
             function updateCharts(type, ranges, data) {
-                if (data.length === 0) return;
+                console.log('开始更新图表 - type:', type, 'ranges:', ranges, 'data:', data);
+                
+                if (data.length === 0) {
+                    console.log('数据为空，不更新图表');
+                    return;
+                }
                 
                 // 确保图表容器存在且可见
                 var chartSection = document.getElementById('chartSection');
@@ -627,18 +683,63 @@
                     chartSection.style.display = 'block';
                 }
                 
+                // 验证ranges数据
+                if (!ranges || !Array.isArray(ranges) || ranges.length === 0) {
+                    console.error('图表更新失败：ranges数据无效:', ranges);
+                    return;
+                }
+                
+                // 验证ranges数据格式
+                var validRanges = ranges.filter(range => {
+                    if (!range) return false;
+                    
+                    var min = range.min;
+                    var max = range.max;
+                    
+                    // 检查是否为有效数字
+                    if (typeof min !== 'number' && isNaN(parseInt(min))) {
+                        console.error('最小值无效:', min);
+                        return false;
+                    }
+                    
+                    if (typeof max !== 'number' && isNaN(parseInt(max))) {
+                        console.error('最大值无效:', max);
+                        return false;
+                    }
+                    
+                    // 转换为数字
+                    min = typeof min === 'number' ? min : parseInt(min);
+                    max = typeof max === 'number' ? max : parseInt(max);
+                    
+                    if (min > max) {
+                        console.error('最小值大于最大值:', min, max);
+                        return false;
+                    }
+                    
+                    return true;
+                });
+                
+                if (validRanges.length === 0) {
+                    console.error('没有有效的区间数据用于图表更新');
+                    return;
+                }
+                
+                console.log('验证后的ranges用于图表:', validRanges);
+                
                 // 延迟初始化图表，确保DOM完全渲染
                 setTimeout(function() {
                     switch(type) {
                         case 'age':
-                            updateAgeCharts(ranges, data);
+                            updateAgeCharts(validRanges, data);
                             break;
                         case 'mileage':
-                            updateMileageCharts(ranges, data);
+                            updateMileageCharts(validRanges, data);
                             break;
                         case 'time':
-                            updateTimeCharts(ranges, data);
+                            updateTimeCharts(validRanges, data);
                             break;
+                        default:
+                            console.error('未知的图表类型:', type);
                     }
                     
                     // 强制重绘图表
@@ -656,29 +757,41 @@
                     return;
                 }
                 
-                // 验证ranges数据格式
+                // 验证ranges数据格式并转换为数字
                 var validRanges = ranges.filter(range => {
-                    return range && typeof range.min === 'number' && typeof range.max === 'number';
-                });
+                    return range && (typeof range.min === 'number' || !isNaN(parseInt(range.min))) && 
+                           (typeof range.max === 'number' || !isNaN(parseInt(range.max)));
+                }).map(range => ({
+                    min: typeof range.min === 'number' ? range.min : parseInt(range.min),
+                    max: typeof range.max === 'number' ? range.max : parseInt(range.max)
+                }));
                 
                 if (validRanges.length === 0) {
                     console.error('没有有效的年龄区间数据');
                     return;
                 }
                 
+                console.log('验证后的ranges:', validRanges);
+                
                 var categories = validRanges.map(range => {
-                    return `${range.min}-${range.max}岁`;
+                    var label = `${range.min}-${range.max}岁`;
+                    console.log('生成标签:', label);
+                    return label;
                 });
                 
                 var counts = validRanges.map(range => {
                     var currentYear = new Date().getFullYear();
-                    return data.filter(item => {
+                    var count = data.filter(item => {
                         var age = currentYear - item.birthYear;
                         return age >= range.min && age <= range.max;
                     }).length;
+                    console.log(`区间 ${range.min}-${range.max}岁 的记录数:`, count);
+                    return count;
                 });
                 
                 console.log('生成的categories:', categories, 'counts:', counts);
+                console.log('categories数组长度:', categories.length);
+                console.log('counts数组长度:', counts.length);
 
                 // 检查并初始化柱状图
                 var barContainer = document.getElementById('barChart');
@@ -702,7 +815,7 @@
                     grid: {
                         left: '15%',
                         right: '15%',
-                        bottom: '30%',
+                        bottom: '35%',
                         top: '20%'
                     },
                     xAxis: { 
@@ -713,7 +826,12 @@
                             fontSize: 12,
                             interval: 0,
                             show: true,
-                            color: '#333'
+                            color: '#333',
+                            margin: 15,
+                            formatter: function(value, index) {
+                                console.log('x轴标签格式化:', value, index);
+                                return value;
+                            }
                         },
                         axisTick: {
                             show: true,
@@ -738,8 +856,15 @@
                         barWidth: '60%'
                     }]
                 };
+                
+                console.log('柱状图配置:', barOption);
                 barChart.setOption(barOption);
                 chartInstances.barChart = barChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    barChart.resize();
+                }, 100);
 
                 // 检查并初始化饼状图
                 var pieContainer = document.getElementById('pieChart');
@@ -795,6 +920,11 @@
                 };
                 pieChart.setOption(pieOption);
                 chartInstances.pieChart = pieChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    pieChart.resize();
+                }, 100);
 
                 // 检查并初始化折线图
                 var lineContainer = document.getElementById('lineChart');
@@ -817,7 +947,7 @@
                     grid: {
                         left: '15%',
                         right: '15%',
-                        bottom: '30%',
+                        bottom: '35%',
                         top: '20%'
                     },
                     xAxis: { 
@@ -828,7 +958,12 @@
                             fontSize: 12,
                             interval: 0,
                             show: true,
-                            color: '#333'
+                            color: '#333',
+                            margin: 15,
+                            formatter: function(value, index) {
+                                console.log('折线图x轴标签格式化:', value, index);
+                                return value;
+                            }
                         },
                         axisTick: {
                             show: true,
@@ -855,8 +990,15 @@
                         symbolSize: 8
                     }]
                 };
+                
+                console.log('折线图配置:', lineOption);
                 lineChart.setOption(lineOption);
                 chartInstances.lineChart = lineChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    lineChart.resize();
+                }, 100);
             }
 
             // 更新里程相关图表
@@ -869,24 +1011,34 @@
                     return;
                 }
                 
-                // 验证ranges数据格式
+                // 验证ranges数据格式并转换为数字
                 var validRanges = ranges.filter(range => {
-                    return range && typeof range.min === 'number' && typeof range.max === 'number';
-                });
+                    return range && (typeof range.min === 'number' || !isNaN(parseInt(range.min))) && 
+                           (typeof range.max === 'number' || !isNaN(parseInt(range.max)));
+                }).map(range => ({
+                    min: typeof range.min === 'number' ? range.min : parseInt(range.min),
+                    max: typeof range.max === 'number' ? range.max : parseInt(range.max)
+                }));
                 
                 if (validRanges.length === 0) {
                     console.error('没有有效的里程区间数据');
                     return;
                 }
                 
+                console.log('验证后的ranges:', validRanges);
+                
                 var categories = validRanges.map(range => {
-                    return `${range.min}-${range.max}公里`;
+                    var label = `${range.min}-${range.max}公里`;
+                    console.log('生成标签:', label);
+                    return label;
                 });
                 
                 var counts = validRanges.map(range => {
-                    return data.filter(item => 
+                    var count = data.filter(item => 
                         item.totalMileage >= range.min && item.totalMileage <= range.max
                     ).length;
+                    console.log(`区间 ${range.min}-${range.max}公里 的记录数:`, count);
+                    return count;
                 });
                 
                 console.log('生成的categories:', categories, 'counts:', counts);
@@ -913,7 +1065,7 @@
                     grid: {
                         left: '15%',
                         right: '15%',
-                        bottom: '30%',
+                        bottom: '35%',
                         top: '20%'
                     },
                     xAxis: { 
@@ -924,7 +1076,8 @@
                             fontSize: 12,
                             interval: 0,
                             show: true,
-                            color: '#333'
+                            color: '#333',
+                            margin: 15
                         },
                         axisTick: {
                             show: true,
@@ -951,6 +1104,11 @@
                 };
                 barChart.setOption(barOption);
                 chartInstances.barChart = barChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    barChart.resize();
+                }, 100);
 
                 // 检查并初始化饼状图
                 var pieContainer = document.getElementById('pieChart');
@@ -1006,6 +1164,11 @@
                 };
                 pieChart.setOption(pieOption);
                 chartInstances.pieChart = pieChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    pieChart.resize();
+                }, 100);
 
                 // 检查并初始化折线图
                 var lineContainer = document.getElementById('lineChart');
@@ -1028,7 +1191,7 @@
                     grid: {
                         left: '15%',
                         right: '15%',
-                        bottom: '30%',
+                        bottom: '35%',
                         top: '20%'
                     },
                     xAxis: { 
@@ -1039,7 +1202,8 @@
                             fontSize: 12,
                             interval: 0,
                             show: true,
-                            color: '#333'
+                            color: '#333',
+                            margin: 15
                         },
                         axisTick: {
                             show: true,
@@ -1068,6 +1232,11 @@
                 };
                 lineChart.setOption(lineOption);
                 chartInstances.lineChart = lineChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    lineChart.resize();
+                }, 100);
             }
 
             // 更新时间相关图表
@@ -1080,24 +1249,34 @@
                     return;
                 }
                 
-                // 验证ranges数据格式
+                // 验证ranges数据格式并转换为数字
                 var validRanges = ranges.filter(range => {
-                    return range && typeof range.min === 'number' && typeof range.max === 'number';
-                });
+                    return range && (typeof range.min === 'number' || !isNaN(parseInt(range.min))) && 
+                           (typeof range.max === 'number' || !isNaN(parseInt(range.max)));
+                }).map(range => ({
+                    min: typeof range.min === 'number' ? range.min : parseInt(range.min),
+                    max: typeof range.max === 'number' ? range.max : parseInt(range.max)
+                }));
                 
                 if (validRanges.length === 0) {
                     console.error('没有有效的时间区间数据');
                     return;
                 }
                 
+                console.log('验证后的ranges:', validRanges);
+                
                 var categories = validRanges.map(range => {
-                    return `${range.min}-${range.max}小时`;
+                    var label = `${range.min}-${range.max}小时`;
+                    console.log('生成标签:', label);
+                    return label;
                 });
                 
                 var counts = validRanges.map(range => {
-                    return data.filter(item => 
+                    var count = data.filter(item => 
                         item.totalJourneyTime >= range.min && item.totalJourneyTime <= range.max
                     ).length;
+                    console.log(`区间 ${range.min}-${range.max}小时 的记录数:`, count);
+                    return count;
                 });
                 
                 console.log('生成的categories:', categories, 'counts:', counts);
@@ -1124,7 +1303,7 @@
                     grid: {
                         left: '15%',
                         right: '15%',
-                        bottom: '30%',
+                        bottom: '35%',
                         top: '20%'
                     },
                     xAxis: { 
@@ -1135,7 +1314,8 @@
                             fontSize: 12,
                             interval: 0,
                             show: true,
-                            color: '#333'
+                            color: '#333',
+                            margin: 15
                         },
                         axisTick: {
                             show: true,
@@ -1162,6 +1342,11 @@
                 };
                 barChart.setOption(barOption);
                 chartInstances.barChart = barChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    barChart.resize();
+                }, 100);
 
                 // 检查并初始化饼状图
                 var pieContainer = document.getElementById('pieChart');
@@ -1217,6 +1402,11 @@
                 };
                 pieChart.setOption(pieOption);
                 chartInstances.pieChart = pieChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    pieChart.resize();
+                }, 100);
 
                 // 检查并初始化折线图
                 var lineContainer = document.getElementById('lineChart');
@@ -1239,7 +1429,7 @@
                     grid: {
                         left: '15%',
                         right: '15%',
-                        bottom: '30%',
+                        bottom: '35%',
                         top: '20%'
                     },
                     xAxis: { 
@@ -1250,7 +1440,8 @@
                             fontSize: 12,
                             interval: 0,
                             show: true,
-                            color: '#333'
+                            color: '#333',
+                            margin: 15
                         },
                         axisTick: {
                             show: true,
@@ -1279,12 +1470,19 @@
                 };
                 lineChart.setOption(lineOption);
                 chartInstances.lineChart = lineChart;
+                
+                // 强制重绘
+                setTimeout(function() {
+                    lineChart.resize();
+                }, 100);
             }
 
             // 更新历史查询条件显示
             function updateHistoryDisplay() {
                 var historyContainer = document.getElementById('historyContainer');
                 var historySection = document.getElementById('historySection');
+                
+                console.log('开始更新历史查询条件显示，savedQueries:', savedQueries);
                 
                 if (Object.keys(savedQueries).length === 0) {
                     historySection.style.display = 'none';
@@ -1301,6 +1499,29 @@
                 
                 sortedKeys.forEach(function(key) {
                     var query = savedQueries[key];
+                    console.log('处理查询条件:', key, query);
+                    
+                    // 详细验证查询数据
+                    if (!query) {
+                        console.error('查询对象为空:', key);
+                        return;
+                    }
+                    
+                    if (typeof query.name !== 'string' || !query.name.trim()) {
+                        console.error('查询名称无效:', query.name);
+                        query.name = '未命名查询';
+                    }
+                    
+                    if (!query.type || !['age', 'mileage', 'time'].includes(query.type)) {
+                        console.error('查询类型无效:', query.type);
+                        return;
+                    }
+                    
+                    if (!query.ranges || !Array.isArray(query.ranges) || query.ranges.length === 0) {
+                        console.error('查询区间数据无效:', query.ranges);
+                        return;
+                    }
+                    
                     var div = document.createElement('div');
                     div.className = 'history-item';
                     div.setAttribute('data-key', key);
@@ -1311,17 +1532,62 @@
                         'time': '时间查询'
                     };
                     
-                    var rangeText = query.ranges.map(function(range) {
+                    // 验证并格式化区间数据
+                    var validRanges = query.ranges.filter(function(range) {
+                        if (!range) return false;
+                        
+                        var min = range.min;
+                        var max = range.max;
+                        
+                        // 检查是否为有效数字
+                        if (typeof min !== 'number' && isNaN(parseInt(min))) {
+                            console.error('最小值无效:', min);
+                            return false;
+                        }
+                        
+                        if (typeof max !== 'number' && isNaN(parseInt(max))) {
+                            console.error('最大值无效:', max);
+                            return false;
+                        }
+                        
+                        // 转换为数字
+                        min = typeof min === 'number' ? min : parseInt(min);
+                        max = typeof max === 'number' ? max : parseInt(max);
+                        
+                        if (min > max) {
+                            console.error('最小值大于最大值:', min, max);
+                            return false;
+                        }
+                        
+                        return true;
+                    });
+                    
+                    if (validRanges.length === 0) {
+                        console.error('没有有效的区间数据');
+                        return;
+                    }
+                    
+                    var rangeText = validRanges.map(function(range) {
+                        var min = typeof range.min === 'number' ? range.min : parseInt(range.min);
+                        var max = typeof range.max === 'number' ? range.max : parseInt(range.max);
+                        
                         var units = {
                             'age': '岁',
                             'mileage': '公里',
                             'time': '小时'
                         };
-                        return range.min + '-' + range.max + units[query.type];
+                        
+                        return min + '-' + max + units[query.type];
                     }).join(', ');
                     
+                    console.log('生成的显示文本:', {
+                        name: query.name,
+                        type: typeLabels[query.type],
+                        rangeText: rangeText
+                    });
+                    
                     div.innerHTML = `
-                        <div>${query.name}</div>
+                        <div style="font-weight: bold; margin-bottom: 2px;">${query.name}</div>
                         <div class="query-info">${typeLabels[query.type]} | ${rangeText}</div>
                     `;
                     div.title = '点击应用此查询条件并自动执行查询';
@@ -1329,6 +1595,7 @@
                     // 绑定点击事件
                     div.addEventListener('click', function(e) {
                         if (e.target.tagName !== 'SPAN') { // 避免删除按钮触发
+                            console.log('点击历史查询条件:', key);
                             applyHistoryQuery(key, query);
                         }
                     });
@@ -1345,6 +1612,7 @@
                     div.appendChild(deleteBtn);
                     
                     historyContainer.appendChild(div);
+                    console.log('已添加历史查询条件元素:', div);
                 });
                 
                 console.log('历史查询条件已更新，共', sortedKeys.length, '个');
@@ -1357,12 +1625,35 @@
                 try {
                     // 切换到对应的查询类型
                     document.querySelectorAll('.query-type-selector .layui-btn').forEach(b => b.classList.remove('active'));
-                    var targetBtn = document.querySelector(`[data-type="${query.type}"]`);
+                    
+                    // 查找对应的查询类型按钮 - 修复选择器
+                    var targetBtn = document.querySelector(`.query-type-selector button[data-type="${query.type}"]`);
                     if (targetBtn) {
                         targetBtn.classList.add('active');
+                        console.log('已激活查询类型按钮:', query.type);
                     } else {
                         console.error('未找到对应的查询类型按钮:', query.type);
-                        return;
+                        
+                        // 输出所有可用的按钮信息
+                        var allButtons = document.querySelectorAll('.query-type-selector .layui-btn');
+                        console.log('可用的按钮数量:', allButtons.length);
+                        allButtons.forEach(function(btn, index) {
+                            console.log(`按钮 ${index}:`, {
+                                text: btn.textContent,
+                                dataType: btn.getAttribute('data-type'),
+                                className: btn.className
+                            });
+                        });
+                        
+                        // 尝试其他选择器
+                        var alternativeBtn = document.querySelector(`[data-type="${query.type}"]`);
+                        if (alternativeBtn) {
+                            console.log('使用替代选择器找到按钮:', alternativeBtn);
+                            alternativeBtn.classList.add('active');
+                        } else {
+                            layer.msg('查询类型不支持，请检查配置');
+                            return;
+                        }
                     }
                     
                     currentQueryType = query.type;
@@ -1372,11 +1663,17 @@
                     // 应用保存的查询条件
                     if (query.ranges && query.ranges.length > 0) {
                         query.ranges.forEach(function(range) {
-                            addRangeInput(range.min, range.max);
+                            if (range && (typeof range.min === 'number' || !isNaN(parseInt(range.min))) && 
+                                (typeof range.max === 'number' || !isNaN(parseInt(range.max)))) {
+                                var min = typeof range.min === 'number' ? range.min : parseInt(range.min);
+                                var max = typeof range.max === 'number' ? range.max : parseInt(range.max);
+                                addRangeInput(min, max);
+                            }
                         });
                         console.log('已应用查询区间:', query.ranges);
                     } else {
                         console.error('查询区间数据为空');
+                        layer.msg('查询区间数据无效');
                         return;
                     }
                     
@@ -1403,20 +1700,257 @@
             
             // 删除历史查询条件
             function deleteHistoryQuery(key) {
+                var query = savedQueries[key];
+                if (!query || !query.id) {
+                    layer.msg('查询条件ID无效');
+                    return;
+                }
+                
                 layer.confirm('确定要删除这个查询条件吗？', {
                     icon: 3,
                     title: '确认删除'
                 }, function(index) {
-                    delete savedQueries[key];
-                    localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
-                    updateHistoryDisplay();
+                    deleteSavedQueryCondition(query.id);
                     layer.close(index);
-                    layer.msg('删除成功');
+                });
+            }
+
+            // 清理无效的保存查询条件
+            function cleanSavedQueries() {
+                var cleaned = false;
+                var keysToRemove = [];
+                
+                Object.keys(savedQueries).forEach(function(key) {
+                    var query = savedQueries[key];
+                    
+                    // 检查查询对象是否有效
+                    if (!query || typeof query !== 'object') {
+                        console.log('移除无效查询对象:', key, query);
+                        keysToRemove.push(key);
+                        cleaned = true;
+                        return;
+                    }
+                    
+                    // 检查必要字段
+                    if (!query.name || typeof query.name !== 'string' || !query.name.trim()) {
+                        console.log('移除无效名称的查询:', key, query.name);
+                        keysToRemove.push(key);
+                        cleaned = true;
+                        return;
+                    }
+                    
+                    if (!query.type || !['age', 'mileage', 'time'].includes(query.type)) {
+                        console.log('移除无效类型的查询:', key, query.type);
+                        keysToRemove.push(key);
+                        cleaned = true;
+                        return;
+                    }
+                    
+                    if (!query.ranges || !Array.isArray(query.ranges) || query.ranges.length === 0) {
+                        console.log('移除无效区间的查询:', key, query.ranges);
+                        keysToRemove.push(key);
+                        cleaned = true;
+                        return;
+                    }
+                    
+                    // 检查区间数据
+                    var hasValidRanges = query.ranges.some(function(range) {
+                        if (!range) return false;
+                        
+                        var min = range.min;
+                        var max = range.max;
+                        
+                        if (typeof min !== 'number' && isNaN(parseInt(min))) return false;
+                        if (typeof max !== 'number' && isNaN(parseInt(max))) return false;
+                        
+                        min = typeof min === 'number' ? min : parseInt(min);
+                        max = typeof max === 'number' ? max : parseInt(max);
+                        
+                        return min <= max;
+                    });
+                    
+                    if (!hasValidRanges) {
+                        console.log('移除无效区间数据的查询:', key, query.ranges);
+                        keysToRemove.push(key);
+                        cleaned = true;
+                        return;
+                    }
+                });
+                
+                // 移除无效的查询
+                keysToRemove.forEach(function(key) {
+                    delete savedQueries[key];
+                });
+                
+                if (cleaned) {
+                    localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
+                    console.log('已清理无效查询条件，剩余:', Object.keys(savedQueries).length, '个');
+                }
+                
+                return cleaned;
+            }
+            
+            // 重置保存的查询条件
+            function resetSavedQueries() {
+                if (confirm('确定要清空所有保存的查询条件吗？此操作不可恢复。')) {
+                    savedQueries = {};
+                    localStorage.removeItem('savedQueries');
+                    updateHistoryDisplay();
+                    layer.msg('已清空所有保存的查询条件');
+                }
+            }
+            
+            // 调试保存的查询条件
+            function debugSavedQueries() {
+                console.log('=== 调试保存的查询条件 ===');
+                console.log('localStorage中的原始数据:', localStorage.getItem('savedQueries'));
+                console.log('savedQueries对象:', savedQueries);
+                console.log('savedQueries类型:', typeof savedQueries);
+                console.log('savedQueries键数量:', Object.keys(savedQueries).length);
+                
+                Object.keys(savedQueries).forEach(function(key) {
+                    var query = savedQueries[key];
+                    console.log(`查询 ${key}:`, {
+                        name: query.name,
+                        nameType: typeof query.name,
+                        type: query.type,
+                        typeType: typeof query.type,
+                        ranges: query.ranges,
+                        rangesType: typeof query.ranges,
+                        rangesLength: Array.isArray(query.ranges) ? query.ranges.length : 'not array',
+                        timestamp: query.timestamp
+                    });
+                    
+                    if (Array.isArray(query.ranges)) {
+                        query.ranges.forEach(function(range, index) {
+                            console.log(`  区间 ${index}:`, {
+                                range: range,
+                                min: range.min,
+                                minType: typeof range.min,
+                                max: range.max,
+                                maxType: typeof range.max
+                            });
+                        });
+                    }
+                });
+                
+                console.log('=== 调试结束 ===');
+            }
+            
+            // 修复保存的查询条件数据
+            function fixSavedQueries() {
+                var fixed = false;
+                
+                Object.keys(savedQueries).forEach(function(key) {
+                    var query = savedQueries[key];
+                    
+                    // 修复名称
+                    if (!query.name || typeof query.name !== 'string') {
+                        query.name = '修复后的查询条件';
+                        fixed = true;
+                    }
+                    
+                    // 修复类型
+                    if (!query.type || !['age', 'mileage', 'time'].includes(query.type)) {
+                        query.type = 'age';
+                        fixed = true;
+                    }
+                    
+                    // 修复区间数据
+                    if (Array.isArray(query.ranges)) {
+                        query.ranges.forEach(function(range) {
+                            if (range) {
+                                if (typeof range.min !== 'number') {
+                                    range.min = parseInt(range.min) || 0;
+                                    fixed = true;
+                                }
+                                if (typeof range.max !== 'number') {
+                                    range.max = parseInt(range.max) || 100;
+                                    fixed = true;
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                if (fixed) {
+                    localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
+                    console.log('已修复保存的查询条件数据');
+                    updateHistoryDisplay();
+                }
+                
+                return fixed;
+            }
+
+            // 从数据库加载保存的查询条件
+            function loadSavedQueryConditions() {
+                layui.$.ajax({
+                    url: '/personJourneyInfo/getQueryConditions',
+                    type: 'get',
+                    data: { userId: 'default_user' },
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res.code === 200) {
+                            // 转换数据格式，兼容前端显示
+                            savedQueries = {};
+                            res.data.forEach(function(item) {
+                                var key = item.id.toString();
+                                savedQueries[key] = {
+                                    id: item.id,
+                                    name: item.queryName,
+                                    type: item.queryType,
+                                    ranges: JSON.parse(item.queryRanges),
+                                    timestamp: new Date(item.createdTime).getTime()
+                                };
+                            });
+                            updateHistoryDisplay();
+                        } else {
+                            console.error('加载查询条件失败:', res.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('加载查询条件失败:', error);
+                    }
+                });
+            }
+            
+            // 删除保存的查询条件
+            function deleteSavedQueryCondition(id) {
+                layui.$.ajax({
+                    url: '/personJourneyInfo/deleteQueryCondition/' + id,
+                    type: 'delete',
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res.code === 200) {
+                            layer.msg('删除成功');
+                            // 重新加载查询条件列表
+                            loadSavedQueryConditions();
+                        } else {
+                            layer.msg('删除失败：' + res.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        layer.msg('删除失败：' + error);
+                        console.error('Error:', error);
+                    }
                 });
             }
 
             // 初始化页面
             initRanges();
+            
+            // 从数据库加载保存的查询条件
+            loadSavedQueryConditions();
+            
+            // 清理无效的保存查询条件（保留，用于兼容性检查）
+            cleanSavedQueries();
+            
+            // 调试保存的查询条件
+            debugSavedQueries();
+            
+            // 修复保存的查询条件数据（保留，用于兼容性检查）
+            fixSavedQueries();
+            
             updateHistoryDisplay();
             
             // 监听图表标签页切换，确保图表正确显示
@@ -1445,6 +1979,14 @@
                 if (Object.keys(savedQueries).length > 0) {
                     console.log('发现保存的查询条件:', savedQueries);
                     layer.msg('📚 发现保存的查询条件，点击可快速应用', {
+                        icon: 1,
+                        time: 3000,
+                        offset: 't'
+                    });
+                } else {
+                    // 如果没有保存的查询条件，提示用户
+                    console.log('没有保存的查询条件');
+                    layer.msg('💡 暂无保存的查询条件，请先设置查询条件并保存', {
                         icon: 1,
                         time: 3000,
                         offset: 't'
