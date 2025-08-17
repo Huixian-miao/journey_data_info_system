@@ -5,6 +5,7 @@
     <groupId>com.chart</groupId>
     <artifactId>homework</artifactId>
     <version>1.0.0</version>
+    <packaging>war</packaging>
     <name>journey</name>
     <description>journey</description>
     <properties>
@@ -17,6 +18,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- 排除内嵌的Tomcat，使用外部Tomcat -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -54,6 +61,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-jasper</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
