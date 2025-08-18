@@ -774,7 +774,7 @@
                 console.log('验证后的ranges:', validRanges);
                 
                 var categories = validRanges.map(range => {
-                    var label = `${range.min}-${range.max}岁`;
+                    var label = `${"${range.min}"}-${"${range.max}"}岁`;
                     console.log('生成标签:', label);
                     return label;
                 });
@@ -1028,7 +1028,7 @@
                 console.log('验证后的ranges:', validRanges);
                 
                 var categories = validRanges.map(range => {
-                    var label = `${range.min}-${range.max}公里`;
+                    var label = `${"${range.min}"}-${"${range.max}"}公里`;
                     console.log('生成标签:', label);
                     return label;
                 });
@@ -1266,7 +1266,7 @@
                 console.log('验证后的ranges:', validRanges);
                 
                 var categories = validRanges.map(range => {
-                    var label = `${range.min}-${range.max}小时`;
+                    var label = `${"${range.min}"}-${"${range.max}"}小时`;
                     console.log('生成标签:', label);
                     return label;
                 });
@@ -1587,8 +1587,8 @@
                     });
                     
                     div.innerHTML = `
-                        <div style="font-weight: bold; margin-bottom: 2px;">${query.name}</div>
-                        <div class="query-info">${typeLabels[query.type]} | ${rangeText}</div>
+                        <div style="font-weight: bold; margin-bottom: 2px;">${"${query.name}"}</div>
+                        <div class="query-info">${"${typeLabels[query.type]}"} | ${"${rangeText}"}</div>
                     `;
                     div.title = '点击应用此查询条件并自动执行查询';
                     
