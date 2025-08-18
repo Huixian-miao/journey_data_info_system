@@ -13,7 +13,12 @@ import org.springframework.stereotype.Service;
 
 import javax.validation.Valid;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -25,194 +30,194 @@ import java.util.stream.Collectors;
 @Service("personJourneyInfoService")
 public class PersonJourneyInfoServiceImpl extends ServiceImpl<PersonJourneyInfoDao, PersonJourneyInfo> implements PersonJourneyInfoService {
 
-    @Autowired
-    private PersonJourneyInfoDao personJourneyInfoDao;
+	@Autowired
+	private PersonJourneyInfoDao personJourneyInfoDao;
 
-    @Autowired
-    private SelectLimitInfoDao selectLimitInfoDao;
-    
-    //调用自定义Mapper方法（需XML或注解SQL）
-    @Override
-    public ResponseVO<List<PersonJourneyInfo>> queryByLimit(@Valid UserLimitQuery userLimitQuery){
-        Integer page = userLimitQuery.getPage();
-        Integer size = userLimitQuery.getSize();
-        //获取当前年份
-        LocalDate today = LocalDate.now();
-        int currentYear = today.getYear();
+	@Autowired
+	private SelectLimitInfoDao selectLimitInfoDao;
+	
+	//调用自定义Mapper方法（需XML或注解SQL）
+	@Override
+	public ResponseVO<List<PersonJourneyInfo>> queryByLimit(@Valid UserLimitQuery userLimitQuery){
+		Integer page = userLimitQuery.getPage();
+		Integer size = userLimitQuery.getSize();
+		//获取当前年份
+		LocalDate today = LocalDate.now();
+		int currentYear = today.getYear();
 
-        int birthYear2 = currentYear-userLimitQuery.getAge1();
-        int birthYear1 = currentYear-userLimitQuery.getAge2();
-        int mileAge1 = userLimitQuery.getMileAge1();
-        int mileAge2 = userLimitQuery.getMileAge2();
-        int journeyTime1 = userLimitQuery.getJourneyTime1();
-        int journeyTime2 = userLimitQuery.getJourneyTime2();
-        int offset = (page - 1) * size;
-        if(birthYear1 > birthYear2 || mileAge1 >mileAge2 || journeyTime1>journeyTime2){
-            return ResponseVO.fail(201,"参数有误，请核实！");
-        }
-        if(userLimitQuery.getAge2() !=0){
-            SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
-            selectLimitInfo.setColumnKey(1);
-            selectLimitInfo.setMinValue(userLimitQuery.getAge1());
-            selectLimitInfo.setMaxValue(userLimitQuery.getAge2());
-            long count = selectLimitInfoDao.count(selectLimitInfo);
-            //当前查询条件未保存，那么保存下
-            if(count==0){
-                selectLimitInfoDao.insert(selectLimitInfo);
-            }
-        }else{
-            birthYear1=0;
-            birthYear2=0;
-        }
-        if(mileAge2 !=0){
-            SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
-            selectLimitInfo.setColumnKey(2);
-            selectLimitInfo.setMinValue(userLimitQuery.getMileAge1());
-            selectLimitInfo.setMaxValue(userLimitQuery.getMileAge2());
-            long count = selectLimitInfoDao.count(selectLimitInfo);
-            //当前查询条件未保存，那么保存下
-            if(count==0){
-                selectLimitInfoDao.insert(selectLimitInfo);
-            }
-        }
-        if(journeyTime2 !=0){
-            SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
-            selectLimitInfo.setColumnKey(2);
-            selectLimitInfo.setMinValue(userLimitQuery.getJourneyTime1());
-            selectLimitInfo.setMaxValue(userLimitQuery.getJourneyTime2());
-            long count = selectLimitInfoDao.count(selectLimitInfo);
-            //当前查询条件未保存，那么保存下
-            if(count==0){
-                selectLimitInfoDao.insert(selectLimitInfo);
-            }
-        }
-        List<PersonJourneyInfo> personJourneyInfos = personJourneyInfoDao.queryAllByLimit(birthYear1, birthYear2,
-                mileAge1, mileAge2, journeyTime1, journeyTime2, offset, size,currentYear);
-        return ResponseVO.success(personJourneyInfos);
-    }
+		int birthYear2 = currentYear-userLimitQuery.getAge1();
+		int birthYear1 = currentYear-userLimitQuery.getAge2();
+		int mileAge1 = userLimitQuery.getMileAge1();
+		int mileAge2 = userLimitQuery.getMileAge2();
+		int journeyTime1 = userLimitQuery.getJourneyTime1();
+		int journeyTime2 = userLimitQuery.getJourneyTime2();
+		int offset = (page - 1) * size;
+		if(birthYear1 > birthYear2 || mileAge1 >mileAge2 || journeyTime1>journeyTime2){
+			return ResponseVO.fail(201,"参数有误，请核实！");
+		}
+		if(userLimitQuery.getAge2() !=0){
+			SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
+			selectLimitInfo.setColumnKey(1);
+			selectLimitInfo.setMinValue(userLimitQuery.getAge1());
+			selectLimitInfo.setMaxValue(userLimitQuery.getAge2());
+			long count = selectLimitInfoDao.count(selectLimitInfo);
+			//当前查询条件未保存，那么保存下
+			if(count==0){
+				selectLimitInfoDao.insert(selectLimitInfo);
+			}
+		}else{
+			birthYear1=0;
+			birthYear2=0;
+		}
+		if(mileAge2 !=0){
+			SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
+			selectLimitInfo.setColumnKey(2);
+			selectLimitInfo.setMinValue(userLimitQuery.getMileAge1());
+			selectLimitInfo.setMaxValue(userLimitQuery.getMileAge2());
+			long count = selectLimitInfoDao.count(selectLimitInfo);
+			//当前查询条件未保存，那么保存下
+			if(count==0){
+				selectLimitInfoDao.insert(selectLimitInfo);
+			}
+		}
+		if(journeyTime2 !=0){
+			SelectLimitInfo selectLimitInfo = new SelectLimitInfo();
+			selectLimitInfo.setColumnKey(2);
+			selectLimitInfo.setMinValue(userLimitQuery.getJourneyTime1());
+			selectLimitInfo.setMaxValue(userLimitQuery.getJourneyTime2());
+			long count = selectLimitInfoDao.count(selectLimitInfo);
+			//当前查询条件未保存，那么保存下
+			if(count==0){
+				selectLimitInfoDao.insert(selectLimitInfo);
+			}
+		}
+		List<PersonJourneyInfo> personJourneyInfos = personJourneyInfoDao.queryAllByLimit(birthYear1, birthYear2,
+				mileAge1, mileAge2, journeyTime1, journeyTime2, offset, size,currentYear);
+		return ResponseVO.success(personJourneyInfos);
+	}
 
-    @Override
-    public ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(SelectLimitInfo selectLimitInfo) {
-        List<SelectLimitInfo> selectLimitInfos = selectLimitInfoDao.queryAllByLimit(selectLimitInfo);
-        return ResponseVO.success(selectLimitInfos);
-    }
-    
-    @Override
-    public List<Integer> queryAgeRangeCounts(List<Map<String, Integer>> ageRanges) {
-        List<Integer> counts = new ArrayList<>();
-        LocalDate today = LocalDate.now();
-        int currentYear = today.getYear();
-        
-        for (Map<String, Integer> range : ageRanges) {
-            Integer minAge = range.get("minAge");
-            Integer maxAge = range.get("maxAge");
-            
-            if (minAge != null && maxAge != null) {
-                int birthYear2 = currentYear - minAge;
-                int birthYear1 = currentYear - maxAge;
-                
-                // 调用DAO方法查询该年龄区间的记录数
-                List<PersonJourneyInfo> records = personJourneyInfoDao.queryAllByLimit(
-                    birthYear1, birthYear2, 0, 0, 0, 0, 0, Integer.MAX_VALUE, currentYear);
-                
-                counts.add(records.size());
-            } else {
-                counts.add(0);
-            }
-        }
-        
-        return counts;
-    }
-    
-    @Override
-    public Map<String, List<String>> getQueryOptions() {
-        Map<String, List<String>> options = new HashMap<>();
-        
-        // 获取所有数据用于生成选项
-        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
-        
-        // 性别选项
-        List<String> genders = allRecords.stream()
-            .map(info -> info.getGender() == 1 ? "男" : "女")
-            .filter(Objects::nonNull)
-            .distinct()
-            .collect(Collectors.toList());
-        options.put("gender", genders);
-        
-        // 年龄范围选项（预设一些常用范围）
-        List<String> ageRanges = Arrays.asList("0-18", "19-30", "31-50", "51-65", "65+");
-        options.put("ageRange", ageRanges);
-        
-        // 旅行时间范围选项
-        List<String> journeyTimeRanges = Arrays.asList("0-10小时", "10-20小时", "20-50小时", "50+小时");
-        options.put("journeyTimeRange", journeyTimeRanges);
-        
-        // 旅行里程范围选项
-        List<String> mileageRanges = Arrays.asList("0-100公里", "100-500公里", "500-1000公里", "1000+公里");
-        options.put("mileageRange", mileageRanges);
-        
-        return options;
-    }
-    
-    @Override
-    public List<PersonJourneyInfo> queryByAgeRanges(List<Map<String, Integer>> ageRanges) {
-        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
-        List<PersonJourneyInfo> result = new ArrayList<>();
-        int currentYear = LocalDate.now().getYear();
-        
-        for (PersonJourneyInfo record : allRecords) {
-            int age = currentYear - record.getBirthYear();
-            for (Map<String, Integer> range : ageRanges) {
-                Integer minAge = range.get("min");
-                Integer maxAge = range.get("max");
-                if (minAge != null && maxAge != null && age >= minAge && age <= maxAge) {
-                    result.add(record);
-                    break; // 一个记录只添加一次
-                }
-            }
-        }
-        
-        return result;
-    }
-    
-    @Override
-    public List<PersonJourneyInfo> queryByMileageRanges(List<Map<String, Integer>> mileageRanges) {
-        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
-        List<PersonJourneyInfo> result = new ArrayList<>();
-        
-        for (PersonJourneyInfo record : allRecords) {
-            for (Map<String, Integer> range : mileageRanges) {
-                Integer minMileage = range.get("min");
-                Integer maxMileage = range.get("max");
-                if (minMileage != null && maxMileage != null && 
-                    record.getTotalMileage() >= minMileage && record.getTotalMileage() <= maxMileage) {
-                    result.add(record);
-                    break; // 一个记录只添加一次
-                }
-            }
-        }
-        
-        return result;
-    }
-    
-    @Override
-    public List<PersonJourneyInfo> queryByTimeRanges(List<Map<String, Integer>> timeRanges) {
-        List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
-        List<PersonJourneyInfo> result = new ArrayList<>();
-        
-        for (PersonJourneyInfo record : allRecords) {
-            for (Map<String, Integer> range : timeRanges) {
-                Integer minTime = range.get("min");
-                Integer maxTime = range.get("max");
-                if (minTime != null && maxTime != null && 
-                    record.getTotalJourneyTime() >= minTime && record.getTotalJourneyTime() <= maxTime) {
-                    result.add(record);
-                    break; // 一个记录只添加一次
-                }
-            }
-        }
-        
-        return result;
-    }
+	@Override
+	public ResponseVO<List<SelectLimitInfo>> querySelectLimitInfoByColumnKey(SelectLimitInfo selectLimitInfo) {
+		List<SelectLimitInfo> selectLimitInfos = selectLimitInfoDao.queryAllByLimit(selectLimitInfo);
+		return ResponseVO.success(selectLimitInfos);
+	}
+	
+	@Override
+	public List<Integer> queryAgeRangeCounts(List<Map<String, Integer>> ageRanges) {
+		List<Integer> counts = new ArrayList<>();
+		LocalDate today = LocalDate.now();
+		int currentYear = today.getYear();
+		
+		for (Map<String, Integer> range : ageRanges) {
+			Integer minAge = range.get("minAge");
+			Integer maxAge = range.get("maxAge");
+			
+			if (minAge != null && maxAge != null) {
+				int birthYear2 = currentYear - minAge;
+				int birthYear1 = currentYear - maxAge;
+				
+				// 调用DAO方法查询该年龄区间的记录数
+				List<PersonJourneyInfo> records = personJourneyInfoDao.queryAllByLimit(
+					birthYear1, birthYear2, 0, 0, 0, 0, 0, Integer.MAX_VALUE, currentYear);
+				
+				counts.add(records.size());
+			} else {
+				counts.add(0);
+			}
+		}
+		
+		return counts;
+	}
+	
+	@Override
+	public Map<String, List<String>> getQueryOptions() {
+		Map<String, List<String>> options = new HashMap<>();
+		
+		// 获取所有数据用于生成选项
+		List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+		
+		// 性别选项
+		List<String> genders = allRecords.stream()
+			.map(info -> info.getGender() == 1 ? "男" : "女")
+			.filter(Objects::nonNull)
+			.distinct()
+			.collect(Collectors.toList());
+		options.put("gender", genders);
+		
+		// 年龄范围选项（预设一些常用范围）
+		List<String> ageRanges = Arrays.asList("0-18", "19-30", "31-50", "51-65", "65+");
+		options.put("ageRange", ageRanges);
+		
+		// 旅行时间范围选项
+		List<String> journeyTimeRanges = Arrays.asList("0-10小时", "10-20小时", "20-50小时", "50+小时");
+		options.put("journeyTimeRange", journeyTimeRanges);
+		
+		// 旅行里程范围选项
+		List<String> mileageRanges = Arrays.asList("0-100公里", "100-500公里", "500-1000公里", "1000+公里");
+		options.put("mileageRange", mileageRanges);
+		
+		return options;
+	}
+	
+	@Override
+	public List<PersonJourneyInfo> queryByAgeRanges(List<Map<String, Integer>> ageRanges) {
+		List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+		List<PersonJourneyInfo> result = new ArrayList<>();
+		int currentYear = LocalDate.now().getYear();
+		
+		for (PersonJourneyInfo record : allRecords) {
+			int age = currentYear - record.getBirthYear();
+			for (Map<String, Integer> range : ageRanges) {
+				Integer min = range.get("min");
+				Integer max = range.get("max");
+				if (min != null && max != null && age >= min && age <= max) {
+					result.add(record);
+					break; // 一个记录只添加一次
+				}
+			}
+		}
+		
+		return result;
+	}
+	
+	@Override
+	public List<PersonJourneyInfo> queryByMileageRanges(List<Map<String, Integer>> mileageRanges) {
+		List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+		List<PersonJourneyInfo> result = new ArrayList<>();
+		
+		for (PersonJourneyInfo record : allRecords) {
+			for (Map<String, Integer> range : mileageRanges) {
+				Integer min = range.get("min");
+				Integer max = range.get("max");
+				if (min != null && max != null && 
+					record.getTotalMileage() >= min && record.getTotalMileage() <= max) {
+					result.add(record);
+					break; // 一个记录只添加一次
+				}
+			}
+		}
+		
+		return result;
+	}
+	
+	@Override
+	public List<PersonJourneyInfo> queryByTimeRanges(List<Map<String, Integer>> timeRanges) {
+		List<PersonJourneyInfo> allRecords = personJourneyInfoDao.selectList(null);
+		List<PersonJourneyInfo> result = new ArrayList<>();
+		
+		for (PersonJourneyInfo record : allRecords) {
+			for (Map<String, Integer> range : timeRanges) {
+				Integer min = range.get("min");
+				Integer max = range.get("max");
+				if (min != null && max != null && 
+					record.getTotalJourneyTime() >= min && record.getTotalJourneyTime() <= max) {
+					result.add(record);
+					break; // 一个记录只添加一次
+				}
+			}
+		}
+		
+		return result;
+	}
 }
 
