@@ -77,7 +77,7 @@ public class SavedQueryConditionServiceImpl implements SavedQueryConditionServic
             queryCondition.setIsActive(0);
             queryCondition.setUpdatedTime(LocalDateTime.now());
             
-            int result = savedQueryConditionMapper.updateById(queryCondition);
+            int result = savedQueryConditionMapper.deleteById(queryCondition);
             
             if (result > 0) {
                 return ResponseVO.success(true);
